@@ -164,6 +164,7 @@ metadata:
 spec:
   selector:
     app: nolock
+    deployment: service
   ports:
     - name: http
       protocol: TCP
@@ -180,6 +181,7 @@ metadata:
 spec:
   selector:
     app: nolock
+    deployment: nolock
   ports:
     - name: http
       protocol: TCP
@@ -190,12 +192,12 @@ spec:
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
-annotations:
-  haproxy.router.openshift.io/balance: roundrobin
-  haproxy.router.openshift.io/disable_cookies: "true"
 metadata:
   name: nolock
   namespace: sganis-dev
+  annotations:
+    haproxy.router.openshift.io/balance: roundrobin
+    haproxy.router.openshift.io/disable_cookies: "true"
 spec:
   to:
     kind: Service
