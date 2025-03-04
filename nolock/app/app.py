@@ -12,7 +12,8 @@ PASSWORD_FAILED_FILE = "/app/data/password_failed.txt"
 os.makedirs(os.path.dirname(PASSWORD_FAILED_FILE), exist_ok=True)
 
 # Environment variables
-SERVICE_URL = os.getenv("SERVICE_URL", "")
+SERVICE_URL = os.getenv("SERVICE_URL", "http://service:5001")
+print(f'SERVICE_URL: {SERVICE_URL}')
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 
 def get_password_hash(password):

@@ -10,3 +10,4 @@ Add to deployment yaml:
 ## deploy
 oc apply -f hello.yml
 oc start-build hello --follow
+

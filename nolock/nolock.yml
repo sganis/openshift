@@ -1,70 +1,204 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-storage
+  namespace: sganis-dev
+  labels:
+    app: nolock
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: efs-sc
+
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: nolock
+  namespace: sganis-dev
+  labels:
+    app: nolock
+
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: nolock
+  namespace: sganis-dev
+  labels:
+    app: nolock
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "nolock:latest"
+  source:
+    git:
+      uri: "https://github.com/sganis/openshift.git"
+      ref: "main"
+    contextDir: "/nolock/app"
+  strategy:
+    dockerStrategy:
+      dockerfilePath: "Dockerfile"
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: service
+  namespace: sganis-dev
+  labels:
+    app: nolock
+
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: service
+  namespace: sganis-dev
+  labels:
+    app: nolock
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "service:latest"
+  source:
+    git:
+      uri: "https://github.com/sganis/openshift.git"
+      ref: "main"
+    contextDir: "/nolock/service"
+  strategy:
+    dockerStrategy:
+      dockerfilePath: "Dockerfile"
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    alpha.image.policy.openshift.io/resolve-names: '*'
-    app.openshift.io/route-disabled: "false"
-    app.openshift.io/vcs-ref: ""
-    app.openshift.io/vcs-uri: https://github.com/sganis/openshift.git
-    deployment.kubernetes.io/revision: "3"
-    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"nolock:latest","namespace":"sganis-dev"},"fieldPath":"spec.template.spec.containers[?(@.name==\"nolock\")].image","paused":"false"}]'
-    openshift.io/generated-by: OpenShiftWebConsole
-  generation: 5
-  labels:
-    app: nolock
-    app.kubernetes.io/component: nolock
-    app.kubernetes.io/instance: nolock
-    app.kubernetes.io/name: nolock
-    app.kubernetes.io/part-of: nolock
   name: nolock
   namespace: sganis-dev
+  labels:
+    app: nolock
 spec:
-  progressDeadlineSeconds: 600
   replicas: 1
-  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: nolock
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: nolock
-        deployment: nolock
     spec:
       containers:
-      - env:
-        - name: REDIS_HOST
-          value: redis
-        - name: REDIS_PORT
-          value: "6379"
-        - name: REDIS_PASS
-          value: "1234"
+      - name: nolock
         image: image-registry.openshift-image-registry.svc:5000/sganis-dev/nolock:latest
         imagePullPolicy: Always
-        name: nolock
+        env:
+        - name: SERVICE_URL
+          value: "http://service:5001"
+        - name: DB_PASSWORD
+          value: "1234"
         ports:
         - containerPort: 5000
-          protocol: TCP
-        resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /app/data
-          name: nolock-storage
+          name: shared-storage
       volumes:
-      - name: nolock-storage
+      - name: shared-storage
         persistentVolumeClaim:
           claimName: shared-storage
-      dnsPolicy: ClusterFirst
       restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
-      
-      
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service
+  namespace: sganis-dev
+  labels:
+    app: nolock
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nolock
+  template:
+    metadata:
+      labels:
+        app: nolock
+    spec:
+      containers:
+      - name: service
+        image: image-registry.openshift-image-registry.svc:5000/sganis-dev/service:latest
+        imagePullPolicy: Always
+        env:
+        - name: SERVICE_PORT
+          value: "5001"
+        ports:
+        - containerPort: 5001
+        volumeMounts:
+        - mountPath: /app/data
+          name: shared-storage
+      volumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: shared-storage
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+  namespace: sganis-dev
+spec:
+  selector:
+    app: nolock
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5001
+      targetPort: 5001
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nolock
+  namespace: sganis-dev
+spec:
+  selector:
+    app: nolock
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: ClusterIP
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nolock
+  namespace: sganis-dev
+spec:
+  to:
+    kind: Service
+    name: nolock
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+  wildcardPolicy: None

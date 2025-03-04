@@ -1,10 +1,6 @@
 from flask import Flask, request, jsonify
 import os
 import time
-from dotenv import load_dotenv
-
-# Load .env file from the mounted volume
-load_dotenv("/app/volume/.env.service")
 
 app = Flask(__name__)
 
