@@ -15,6 +15,7 @@ os.makedirs(os.path.dirname(PASSWORD_FAILED_FILE), exist_ok=True)
 SERVICE_URL = os.getenv("SERVICE_URL", "http://service:5001")
 print(f'SERVICE_URL: {SERVICE_URL}')
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+print(f'DB_PASSWORD: {DB_PASSWORD}')
 
 def get_password_hash(password):
     """Generate a simple hash for the current password."""

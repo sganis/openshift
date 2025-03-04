@@ -90,7 +90,7 @@ metadata:
   labels:
     app: nolock
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: nolock
@@ -190,6 +190,9 @@ spec:
 ---
 apiVersion: route.openshift.io/v1
 kind: Route
+annotations:
+  haproxy.router.openshift.io/balance: roundrobin
+  haproxy.router.openshift.io/disable_cookies: "true"
 metadata:
   name: nolock
   namespace: sganis-dev

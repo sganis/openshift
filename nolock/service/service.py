@@ -5,7 +5,8 @@ import time
 app = Flask(__name__)
 
 # Environment variables
-SERVICE_PASSWORD = os.getenv("DB_PASSWORD", "")
+DB_PASSWORD = os.getenv("DB_PASSWORD", "")
+print(f'DB_PASSWORD: {DB_PASSWORD}')
 
 # Dictionary to track failed attempts: {client_ip: {"count": int, "lock_time": float}}
 failed_attempts = {}
@@ -33,7 +34,7 @@ def get_data():
             failed_attempts[client_ip] = {"count": 0, "lock_time": 0}
 
     # Validate password
-    if not auth_header or auth_header.split(" ")[-1] != SERVICE_PASSWORD:
+    if not auth_header or auth_header.split(" ")[-1] != DB_PASSWORD:
         failed_attempts[client_ip] = failed_attempts.get(client_ip, {"count": 0, "lock_time": 0})
         failed_attempts[client_ip]["count"] += 1
         failed_attempts[client_ip]["lock_time"] = time.time()
@@ -47,7 +48,7 @@ def get_data():
         else:
             return jsonify({
                 "error": "Unauthorized", 
-                'db password': SERVICE_PASSWORD,
+                'db password': DB_PASSWORD,
                 'failed attempts': failed_attempts[client_ip]["count"],
             }), 401
 
