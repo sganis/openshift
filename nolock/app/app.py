@@ -11,6 +11,7 @@ SERVICE_URL = os.getenv("SERVICE_URL", "")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 REDIS_HOST = os.getenv("REDIS_HOST", "redis")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_PASS = int(os.getenv("REDIS_PASS", "1234"))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 
 # Redis client for distributed tracking
@@ -18,6 +19,7 @@ redis_client = redis.StrictRedis(
     host=REDIS_HOST, 
     port=REDIS_PORT, 
     db=REDIS_DB, 
+    password=REDIS_PASS,
     decode_responses=True)
 PASSWORD_FAILED_KEY = "password_failed_hash"
 
