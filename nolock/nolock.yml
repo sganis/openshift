@@ -1,28 +1,70 @@
-version: "3.8"
-
-services:
-  app:
-    image: app
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
-    ports:
-      - "8000:5000"
-    volumes:
-      - .\\volume:/app/volume  # Mount the volume
-    depends_on:
-      - service
-
-  service:
-    image: service
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - .\\volume:/app/volume  # Mount the volume
-
-volumes:
-  volume:
-    
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    alpha.image.policy.openshift.io/resolve-names: '*'
+    app.openshift.io/route-disabled: "false"
+    app.openshift.io/vcs-ref: ""
+    app.openshift.io/vcs-uri: https://github.com/sganis/openshift.git
+    deployment.kubernetes.io/revision: "3"
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"nolock:latest","namespace":"sganis-dev"},"fieldPath":"spec.template.spec.containers[?(@.name==\"nolock\")].image","paused":"false"}]'
+    openshift.io/generated-by: OpenShiftWebConsole
+  generation: 5
+  labels:
+    app: nolock
+    app.kubernetes.io/component: nolock
+    app.kubernetes.io/instance: nolock
+    app.kubernetes.io/name: nolock
+    app.kubernetes.io/part-of: nolock
+  name: nolock
+  namespace: sganis-dev
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: nolock
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nolock
+        deployment: nolock
+    spec:
+      containers:
+      - env:
+        - name: REDIS_HOST
+          value: redis
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASS
+          value: "1234"
+        image: image-registry.openshift-image-registry.svc:5000/sganis-dev/nolock:latest
+        imagePullPolicy: Always
+        name: nolock
+        ports:
+        - containerPort: 5000
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /app/data
+          name: nolock-storage
+      volumes:
+      - name: nolock-storage
+        persistentVolumeClaim:
+          claimName: shared-storage
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      
+      
