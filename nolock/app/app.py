@@ -12,7 +12,9 @@ PASSWORD_FAILED_FILE = "/app/data/password_failed.txt"
 os.makedirs(os.path.dirname(PASSWORD_FAILED_FILE), exist_ok=True)
 
 # Environment variables
-SERVICE_URL = os.getenv("SERVICE_URL", "http://service:5001")
+SERVICE_URL = os.getenv("SERVICE_URL")
+if not SERVICE_URL:  # If None OR Empty String, use default
+    SERVICE_URL = "http://service:5001"
 print(f'SERVICE_URL: {SERVICE_URL}')
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 print(f'DB_PASSWORD: {DB_PASSWORD}')

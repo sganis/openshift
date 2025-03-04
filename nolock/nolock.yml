@@ -142,8 +142,8 @@ spec:
         image: image-registry.openshift-image-registry.svc:5000/sganis-dev/service:latest
         imagePullPolicy: Always
         env:
-        - name: SERVICE_PORT
-          value: "5001"
+        - name: DB_PASSWORD
+          value: "1234"
         ports:
         - containerPort: 5001
         volumeMounts:
