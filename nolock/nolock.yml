@@ -17,29 +17,31 @@ spec:
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
-  name: nolock
+  name: frontend
   namespace: sganis-dev
   labels:
     app: nolock
+    component: frontend
 
 ---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
-  name: nolock
+  name: frontend
   namespace: sganis-dev
   labels:
     app: nolock
+    component: frontend
 spec:
   output:
     to:
       kind: ImageStreamTag
-      name: "nolock:latest"
+      name: "frontend:latest"
   source:
     git:
       uri: "https://github.com/sganis/openshift.git"
       ref: "main"
-    contextDir: "/nolock/app"
+    contextDir: "/nolock/frontend"
   strategy:
     dockerStrategy:
       dockerfilePath: "Dockerfile"
@@ -55,6 +57,7 @@ metadata:
   namespace: sganis-dev
   labels:
     app: nolock
+    component: service
 
 ---
 apiVersion: build.openshift.io/v1
@@ -64,6 +67,7 @@ metadata:
   namespace: sganis-dev
   labels:
     app: nolock
+    component: service
 spec:
   output:
     to:
@@ -85,23 +89,26 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nolock
+  name: frontend
   namespace: sganis-dev
   labels:
     app: nolock
+    component: frontend
 spec:
   replicas: 2
   selector:
     matchLabels:
       app: nolock
+      component: frontend
   template:
     metadata:
       labels:
         app: nolock
+        component: frontend
     spec:
       containers:
-      - name: nolock
-        image: image-registry.openshift-image-registry.svc:5000/sganis-dev/nolock:latest
+      - name: frontend
+        image: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend:latest
         imagePullPolicy: Always
         env:
         - name: SERVICE_URL
@@ -127,15 +134,18 @@ metadata:
   namespace: sganis-dev
   labels:
     app: nolock
+    component: service
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: nolock
+      component: service
   template:
     metadata:
       labels:
         app: nolock
+        component: service
     spec:
       containers:
       - name: service
@@ -161,10 +171,13 @@ kind: Service
 metadata:
   name: service
   namespace: sganis-dev
+  labels:
+    app: nolock
+    component: service
 spec:
   selector:
     app: nolock
-    deployment: service
+    component: service
   ports:
     - name: http
       protocol: TCP
@@ -176,12 +189,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: nolock
+  name: frontend
   namespace: sganis-dev
+  labels:
+    app: nolock
+    component: frontend
 spec:
   selector:
     app: nolock
-    deployment: nolock
+    component: frontend
   ports:
     - name: http
       protocol: TCP
@@ -193,15 +209,18 @@ spec:
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: nolock
+  name: frontend
   namespace: sganis-dev
+  labels:
+    app: nolock
+    component: frontend
   annotations:
     haproxy.router.openshift.io/balance: roundrobin
     haproxy.router.openshift.io/disable_cookies: "true"
 spec:
   to:
     kind: Service
-    name: nolock
+    name: frontend
   port:
     targetPort: http
   tls:
