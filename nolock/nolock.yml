@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  app:
+    image: app
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8000:5000"
+    volumes:
+      - .\\volume:/app/volume  # Mount the volume
+    depends_on:
+      - service
+
+  service:
+    image: service
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    volumes:
+      - .\\volume:/app/volume  # Mount the volume
+
+volumes:
+  volume:
+    
