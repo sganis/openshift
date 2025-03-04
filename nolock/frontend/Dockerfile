@@ -17,8 +17,9 @@ EXPOSE 5000
 # Set environment variables (these will be overridden in OpenShift)
 ENV SERVICE_URL=""
 ENV DB_PASSWORD=""
-ENV REDIS_HOST="localhost"
+ENV REDIS_HOST="redis"
 ENV REDIS_PORT=6379
+ENV REDIS_PORT="1234"
 ENV REDIS_DB=0
 
 # Run the application

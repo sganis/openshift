@@ -1,28 +1,228 @@
-version: "3.8"
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-storage
+  namespace: sganis-dev
+  labels:
+    app: nolock
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: efs-sc
 
-services:
-  app:
-    image: app
-    deploy:
-      replicas: 3
-      restart_policy:
-        condition: on-failure
-    ports:
-      - "8000:5000"
-    volumes:
-      - .\\volume:/app/volume  # Mount the volume
-    depends_on:
-      - service
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: frontend
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: frontend
 
-  service:
-    image: service
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    volumes:
-      - .\\volume:/app/volume  # Mount the volume
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: frontend
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: frontend
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "frontend:latest"
+  source:
+    git:
+      uri: "https://github.com/sganis/openshift.git"
+      ref: "main"
+    contextDir: "/nolock/frontend"
+  strategy:
+    dockerStrategy:
+      dockerfilePath: "Dockerfile"
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
 
-volumes:
-  volume:
-    
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: service
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: service
+
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: service
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: service
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: "service:latest"
+  source:
+    git:
+      uri: "https://github.com/sganis/openshift.git"
+      ref: "main"
+    contextDir: "/nolock/service"
+  strategy:
+    dockerStrategy:
+      dockerfilePath: "Dockerfile"
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nolock
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: nolock
+        component: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend:latest
+        imagePullPolicy: Always
+        env:
+        - name: SERVICE_URL
+          value: "http://service:5001"
+        - name: DB_PASSWORD
+          value: "1234"
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - mountPath: /app/data
+          name: shared-storage
+      volumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: shared-storage
+      restartPolicy: Always
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nolock
+      component: service
+  template:
+    metadata:
+      labels:
+        app: nolock
+        component: service
+    spec:
+      containers:
+      - name: service
+        image: image-registry.openshift-image-registry.svc:5000/sganis-dev/service:latest
+        imagePullPolicy: Always
+        env:
+        - name: DB_PASSWORD
+          value: "1234"
+        ports:
+        - containerPort: 5001
+        volumeMounts:
+        - mountPath: /app/data
+          name: shared-storage
+      volumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: shared-storage
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: service
+spec:
+  selector:
+    app: nolock
+    component: service
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5001
+      targetPort: 5001
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: frontend
+spec:
+  selector:
+    app: nolock
+    component: frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: ClusterIP
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: frontend
+  namespace: sganis-dev
+  labels:
+    app: nolock
+    component: frontend
+  annotations:
+    haproxy.router.openshift.io/balance: roundrobin
+    haproxy.router.openshift.io/disable_cookies: "true"
+spec:
+  to:
+    kind: Service
+    name: frontend
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+  wildcardPolicy: None
