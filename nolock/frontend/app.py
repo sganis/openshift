@@ -25,6 +25,7 @@ redis_client = redis.StrictRedis(
     host=REDIS_HOST, password=REDIS_PASS,
     port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
 PASSWORD_FAILED_KEY = "password_failed_hash"
+redis_client.incr("hits", 0)
 
 def get_password_hash(password):
     """Generate a simple hash for the current password."""
@@ -45,6 +46,7 @@ def reset_password_failure():
 
 @app.route("/")
 def index():
+    hits = redis_client.incr("hits")
     hostname = os.getenv("HOSTNAME", "Unknown")
     logs = []  # Collect logs in an array to return in the JSON response
 
@@ -66,7 +68,8 @@ def index():
         return jsonify({
             "hostname": hostname,
             "response": response.json(),
-            "logs": logs
+            "logs": logs,
+            "hits": hits
         })
 
     logs.append(f"Password failed on {hostname}. Marking it as failed.")
