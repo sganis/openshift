@@ -1,85 +1,74 @@
-from flask import Flask, jsonify
-import requests
+from flask import Flask, jsonify, request
 import os
-import hashlib
+import json
 import redis
+from pymongo import MongoClient
 
 app = Flask(__name__)
 
 # Environment variables
 SERVICE_URL = os.getenv("SERVICE_URL", "")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_PASS = int(os.getenv("REDIS_PASS", ))
+REDIS_PASS = os.getenv("REDIS_PASS", None)
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
+REDIS_QUEUE = "log_queue"
+
+MONGO_HOST = os.getenv("MONGO_HOST", "localhost")  # MongoDB service name in Kubernetes/OpenShift
+MONGO_PORT = int(os.getenv("MONGO_PORT", 27017))
+MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "logs_db")
+MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME", "logs")
+MONGO_USER = os.getenv("MONGO_USER", "admin")
+MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "")
+
 print(f"SERVICE_URL: {SERVICE_URL}")
 print(f"DB_PASSWORD: {DB_PASSWORD}")
 print(f"REDIS_HOST: {REDIS_HOST}")
 print(f"REDIS_PORT: {REDIS_PORT}")
 print(f"REDIS_DB: {REDIS_DB}")
 print(f"REDIS_PASS: {REDIS_PASS}")
+print(f"MONGO_HOST: {MONGO_HOST}")
+print(f"MONGO_PORT: {MONGO_PORT}")
 
-# Redis client for distributed tracking
+# Redis client
 redis_client = redis.StrictRedis(
-    host=REDIS_HOST, password=REDIS_PASS,
-    port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
-PASSWORD_FAILED_KEY = "password_failed_hash"
-redis_client.incr("hits", 0)
+    host=REDIS_HOST, 
+    password=REDIS_PASS if REDIS_PASS else None,
+    port=REDIS_PORT,
+    db=REDIS_DB, 
+    decode_responses=True
+)
 
-def get_password_hash(password):
-    """Generate a simple hash for the current password."""
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def has_password_failed():
-    """Check if the last password attempt failed and if the stored password hash matches the current password."""
-    stored_hash = redis_client.get(PASSWORD_FAILED_KEY)
-    return stored_hash == get_password_hash(DB_PASSWORD) if stored_hash else False
-
-def mark_password_as_failed():
-    """Mark the current password as failed to prevent unnecessary retries."""
-    redis_client.set(PASSWORD_FAILED_KEY, get_password_hash(DB_PASSWORD))
-
-def reset_password_failure():
-    """Clear the failure status when a valid password is used."""
-    redis_client.delete(PASSWORD_FAILED_KEY)
+# MongoDB client
+mongo_client = MongoClient(f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/")
+mongo_db = mongo_client[MONGO_DB_NAME]
+mongo_collection = mongo_db[MONGO_COLLECTION_NAME]
 
 @app.route("/")
 def index():
+    """Push a log message to Redis for worker processing."""
     hits = redis_client.incr("hits")
-    hostname = os.getenv("HOSTNAME", "Unknown")
-    logs = []  # Collect logs in an array to return in the JSON response
+    log_entry = {
+        "hostname": os.getenv("HOSTNAME", "Unknown"),
+        "hits": hits
+    }
+    redis_client.rpush(REDIS_QUEUE, json.dumps(log_entry))
+    return jsonify({"status": "queued", "message": log_entry}), 202
 
-    if has_password_failed():
-        logs.append(f"Skipping password retry on {hostname}, last attempt failed with the same password.")
-        return jsonify({
-            "hostname": hostname,
-            "error": "Unauthorized - Password is incorrect, but account is not locked",
-            "logs": logs
-        }), 401
+@app.route("/logs/<int:n>", methods=["GET"])
+def get_logs(n):
+    """Retrieve the last N logs from MongoDB."""
+    try:
+        logs = list(mongo_collection.find().sort("timestamp", -1).limit(n))
 
-    logs.append(f"Trying password on {hostname}.")
-    headers = {"Authorization": f"Bearer {DB_PASSWORD}"}
-    response = requests.get(f"{SERVICE_URL}/data", headers=headers)
+        # Convert MongoDB ObjectId to string
+        for log in logs:
+            log["_id"] = str(log["_id"])
 
-    if response.status_code == 200:
-        logs.append(f"Password worked on {hostname}. Resetting failure status.")
-        reset_password_failure()
-        return jsonify({
-            "hostname": hostname,
-            "response": response.json(),
-            "logs": logs,
-            "hits": hits
-        })
-
-    logs.append(f"Password failed on {hostname}. Marking it as failed.")
-    mark_password_as_failed()
-
-    return jsonify({
-        "hostname": hostname,
-        "error": "Unauthorized - Password is incorrect, but account is not locked",
-        "logs": logs
-    }), 401
+        return jsonify({"logs": logs}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
