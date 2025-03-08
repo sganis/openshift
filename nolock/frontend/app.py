@@ -7,34 +7,30 @@ from pymongo import MongoClient
 app = Flask(__name__)
 
 # Environment variables
-SERVICE_URL = os.getenv("SERVICE_URL", "")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "")
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_PASS = os.getenv("REDIS_PASS", None)
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 REDIS_QUEUE = "log_queue"
 
 MONGO_HOST = os.getenv("MONGO_HOST", "localhost")  # MongoDB service name in Kubernetes/OpenShift
 MONGO_PORT = int(os.getenv("MONGO_PORT", 27017))
-MONGO_DB_NAME = os.getenv("MONGO_DB_NAME", "logs_db")
-MONGO_COLLECTION_NAME = os.getenv("MONGO_COLLECTION_NAME", "logs")
+MONGO_DB = os.getenv("MONGO_DB", "logs_db")
+MONGO_COLLECTION = os.getenv("MONGO_COLLECTION", "logs")
 MONGO_USER = os.getenv("MONGO_USER", "admin")
-MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "")
+MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", None)
 
-print(f"SERVICE_URL: {SERVICE_URL}")
-print(f"DB_PASSWORD: {DB_PASSWORD}")
 print(f"REDIS_HOST: {REDIS_HOST}")
 print(f"REDIS_PORT: {REDIS_PORT}")
 print(f"REDIS_DB: {REDIS_DB}")
-print(f"REDIS_PASS: {REDIS_PASS}")
+print(f"REDIS_PASSWORD: {REDIS_PASWORD}")
 print(f"MONGO_HOST: {MONGO_HOST}")
 print(f"MONGO_PORT: {MONGO_PORT}")
 
 # Redis client
 redis_client = redis.StrictRedis(
     host=REDIS_HOST, 
-    password=REDIS_PASS if REDIS_PASS else None,
+    password=REDIS_PASWORD if REDIS_PASS WORD else None,
     port=REDIS_PORT,
     db=REDIS_DB, 
     decode_responses=True
@@ -42,8 +38,8 @@ redis_client = redis.StrictRedis(
 
 # MongoDB client
 mongo_client = MongoClient(f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/")
-mongo_db = mongo_client[MONGO_DB_NAME]
-mongo_collection = mongo_db[MONGO_COLLECTION_NAME]
+mongo_db = mongo_client[MONGO_DB]
+mongo_collection = mongo_db[MONGO_COLLECTION]
 
 @app.route("/")
 def index():

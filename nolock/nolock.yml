@@ -44,24 +44,30 @@ items:
       spec:
         containers:
         - env:
-          - name: SERVICE_URL
-            value: http://service:5001
           - name: REDIS_HOST
             value: redis
           - name: REDIS_PORT
             value: "6379"
           - name: REDIS_DB
             value: "0"
-          - name: REDIS_PASS
+          - name: REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: database-password
-                name: redis
-          - name: DB_PASSWORD
+                key: nolock
+                name: REDIS_PASSWORD
+          - name: MONGO_HOST
+            value: mongodb
+          - name: MONGO_PORT
+            value: "27017"
+          - name: MONGO_DB
+            value: logs_db
+          - name: MONGO_COLLECTION
+            value: logs
+          - name: MONGO_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: FRONTEND_PASSWORD
-                name: nolock
+                key: nolock
+                name: MONGO_PASSWORD
           image: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend:latest
           imagePullPolicy: Always
           name: frontend
@@ -115,11 +121,30 @@ items:
       spec:
         containers:
         - env:
-          - name: DB_PASSWORD
+          - name: REDIS_HOST
+            value: redis
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_DB
+            value: "0"
+          - name: REDIS_PASSWORD
             valueFrom:
               secretKeyRef:
-                key: SERVICE_PASSWORD
-                name: nolock
+                key: nolock
+                name: REDIS_PASSWORD
+          - name: MONGO_HOST
+            value: mongodb
+          - name: MONGO_PORT
+            value: "27017"
+          - name: MONGO_DB
+            value: logs_db
+          - name: MONGO_COLLECTION
+            value: logs
+          - name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: nolock
+                name: MONGO_PASSWORD
           image: image-registry.openshift-image-registry.svc:5000/sganis-dev/service:latest
           imagePullPolicy: Always
           name: worker
@@ -160,32 +185,6 @@ items:
     selector:
       app: nolock
       component: frontend
-    sessionAffinity: None
-    type: ClusterIP
-  status:
-    loadBalancer: {}
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"nolock","component":"service"},"name":"service","namespace":"sganis-dev"},"spec":{"ports":[{"name":"http","port":5001,"protocol":"TCP","targetPort":5001}],"selector":{"app":"nolock","component":"service"},"type":"ClusterIP"}}
-    labels:
-      app: nolock
-      component: worker
-    name: worker
-    namespace: sganis-dev
-  spec:
-    clusterIP: 172.30.43.242
-    clusterIPs:
-    - 172.30.43.242
-    internalTrafficPolicy: Cluster
-    ipFamilies:
-    - IPv4
-    ipFamilyPolicy: SingleStack
-    selector:
-      app: nolock
-      component: worker
     sessionAffinity: None
     type: ClusterIP
   status:
