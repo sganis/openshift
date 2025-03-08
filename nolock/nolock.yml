@@ -286,6 +286,37 @@ items:
       deployment: mongodb
     sessionAffinity: None
     type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: "2025-03-08T06:58:35Z"
+    labels:
+      app: redis
+      app.kubernetes.io/component: redis
+      app.kubernetes.io/instance: redis
+    name: redis
+    namespace: sganis-dev
+    resourceVersion: "373762620"
+    uid: 0d5ccc07-505c-4d83-9063-21493c71ce54
+  spec:
+    clusterIP: 172.30.20.198
+    clusterIPs:
+    - 172.30.20.198
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: 6379-tcp
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+    selector:
+      deployment: redis
+    sessionAffinity: None
+    type: ClusterIP
 
 # build configs
 - apiVersion: build.openshift.io/v1
@@ -366,8 +397,6 @@ items:
     successfulBuildsHistoryLimit: 5
     triggers:
     - type: ConfigChange
-  status:
-    lastVersion: 5
 
 # image streams
 - apiVersion: image.openshift.io/v1

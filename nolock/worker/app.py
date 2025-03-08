@@ -56,6 +56,7 @@ def start_worker():
             log_data = json.loads(log_entry)
             process_log(log_data)
         else:
+            print('🔴 No messages in Redis. Waiting...')
             time.sleep(1)  # Sleep for a second if no messages
 
 if __name__ == "__main__":
