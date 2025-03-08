@@ -1,25 +1,21 @@
+# apiVersion: template.openshift.io/v1
+# kind: Template
+# metadata:
+#   name: nolock
+#   namespace: sganis-dev
+# objects:
+
 apiVersion: v1
 kind: List
 items:
-
-# deployment
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    annotations:
-      deployment.kubernetes.io/revision: "7"
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"nolock","component":"frontend"},"name":"frontend","namespace":"sganis-dev"},"spec":{"replicas":2,"selector":{"matchLabels":{"app":"nolock","component":"frontend"}},"template":{"metadata":{"labels":{"app":"nolock","component":"frontend"}},"spec":{"containers":[{"env":[{"name":"SERVICE_URL","value":"http://service:5001"},{"name":"DB_PASSWORD","value":"1234"}],"image":"image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend:latest","imagePullPolicy":"Always","name":"frontend","ports":[{"containerPort":5000}]}],"restartPolicy":"Always","volumes":[{"name":"shared-storage","persistentVolumeClaim":{"claimName":"shared-storage"}}]}}}}
-    creationTimestamp: "2025-03-04T17:04:02Z"
-    generation: 8
     labels:
       app: nolock
-      app.kubernetes.io/part-of: nolock
       component: frontend
     name: frontend
     namespace: sganis-dev
-    resourceVersion: "358635754"
-    uid: 2a3c6112-4619-430e-bcd0-40a53553478a
   spec:
     progressDeadlineSeconds: 600
     replicas: 1
@@ -36,7 +32,7 @@ items:
     template:
       metadata:
         annotations:
-          openshift.openshift.io/restartedAt: "2025-03-04T17:26:31.954Z"
+          openshift.openshift.io/restartedAt: "2025-03-08T09:59:09.684Z"
         creationTimestamp: null
         labels:
           app: nolock
@@ -85,93 +81,10 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    annotations:
-      deployment.kubernetes.io/revision: "2"
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"labels":{"app":"nolock","component":"service"},"name":"service","namespace":"sganis-dev"},"spec":{"replicas":1,"selector":{"matchLabels":{"app":"nolock","component":"service"}},"template":{"metadata":{"labels":{"app":"nolock","component":"service"}},"spec":{"containers":[{"env":[{"name":"DB_PASSWORD","value":"1234"}],"image":"image-registry.openshift-image-registry.svc:5000/sganis-dev/service:latest","imagePullPolicy":"Always","name":"service","ports":[{"containerPort":5001}]}],"restartPolicy":"Always","volumes":[{"name":"shared-storage","persistentVolumeClaim":{"claimName":"shared-storage"}}]}}}}
-    creationTimestamp: "2025-03-04T17:04:03Z"
-    generation: 2
     labels:
       app: nolock
-      app.kubernetes.io/part-of: nolock
-      component: worker
-    name: worker
-    namespace: sganis-dev
-    resourceVersion: "358638358"
-    uid: d758dddd-13ad-44ce-aa53-87ab62f2088d
-  spec:
-    progressDeadlineSeconds: 600
-    replicas: 1
-    revisionHistoryLimit: 10
-    selector:
-      matchLabels:
-        app: nolock
-        component: worker
-    strategy:
-      rollingUpdate:
-        maxSurge: 25%
-        maxUnavailable: 25%
-      type: RollingUpdate
-    template:
-      metadata:
-        creationTimestamp: null
-        labels:
-          app: nolock
-          component: worker
-      spec:
-        containers:
-        - env:
-          - name: REDIS_HOST
-            value: redis
-          - name: REDIS_PORT
-            value: "6379"
-          - name: REDIS_DB
-            value: "0"
-          - name: REDIS_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: nolock
-                key: REDIS_PASSWORD
-          - name: MONGO_HOST
-            value: mongodb
-          - name: MONGO_PORT
-            value: "27017"
-          - name: MONGO_DB
-            value: logs_db
-          - name: MONGO_COLLECTION
-            value: logs
-          - name: MONGO_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: nolock
-                key: MONGO_PASSWORD
-          image: image-registry.openshift-image-registry.svc:5000/sganis-dev/service:latest
-          imagePullPolicy: Always
-          name: worker
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-        dnsPolicy: ClusterFirst
-        restartPolicy: Always
-        schedulerName: default-scheduler
-        securityContext: {}
-        terminationGracePeriodSeconds: 30        
-- apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    annotations:
-      deployment.kubernetes.io/revision: "2"
-      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"mongodb:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"mongodb\")].image"}]'
-      openshift.io/generated-by: OpenShiftNewApp
-    generation: 2
-    labels:
-      app: mongodb
-      app.kubernetes.io/component: mongodb
-      app.kubernetes.io/instance: mongodb
-      app.kubernetes.io/part-of: nolock
     name: mongodb
     namespace: sganis-dev
-    resourceVersion: "374104908"
   spec:
     progressDeadlineSeconds: 600
     replicas: 1
@@ -186,9 +99,6 @@ items:
       type: RollingUpdate
     template:
       metadata:
-        annotations:
-          openshift.io/generated-by: OpenShiftNewApp
-        creationTimestamp: null
         labels:
           deployment: mongodb
       spec:
@@ -208,327 +118,100 @@ items:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-          - mountPath: /data/configdb
-            name: mongodb-volume-1
           - mountPath: /data/db
-            name: mongodb-volume-2
+            name: mongodb
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
         securityContext: {}
         terminationGracePeriodSeconds: 30
         volumes:
-        - emptyDir: {}
-          name: mongodb-volume-1
-        - emptyDir: {}
-          name: mongodb-volume-2
-
-# service
-- apiVersion: v1
-  kind: Service
+          - name: mongodb
+            emptyDir: {}
+            # persistentVolumeClaim:
+            #   claimName: mongodb
+    observedGeneration: 2
+    readyReplicas: 1
+    replicas: 1
+    updatedReplicas: 1
+- apiVersion: apps/v1
+  kind: Deployment
   metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"nolock","component":"frontend"},"name":"frontend","namespace":"sganis-dev"},"spec":{"ports":[{"name":"http","port":80,"protocol":"TCP","targetPort":5000}],"selector":{"app":"nolock","component":"frontend"},"type":"ClusterIP"}}
-    labels:
-      app: nolock
-      component: frontend
-    name: frontend
-    namespace: sganis-dev
-  spec:
-    clusterIP: 172.30.71.116
-    clusterIPs:
-    - 172.30.71.116
-    internalTrafficPolicy: Cluster
-    ipFamilies:
-    - IPv4
-    ipFamilyPolicy: SingleStack
-    ports:
-    - name: http
-      port: 80
-      protocol: TCP
-      targetPort: 5000
-    selector:
-      app: nolock
-      component: frontend
-    sessionAffinity: None
-    type: ClusterIP
-  status:
-    loadBalancer: {}
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      openshift.io/generated-by: OpenShiftNewApp
-    creationTimestamp: "2025-03-08T06:58:35Z"
-    labels:
-      app: mongodb
-      app.kubernetes.io/component: mongodb
-      app.kubernetes.io/instance: mongodb
-    name: mongodb
-    namespace: sganis-dev
-    resourceVersion: "373762620"
-    uid: 0d5ccc07-505c-4d83-9063-21493c71ce54
-  spec:
-    clusterIP: 172.30.20.198
-    clusterIPs:
-    - 172.30.20.198
-    internalTrafficPolicy: Cluster
-    ipFamilies:
-    - IPv4
-    ipFamilyPolicy: SingleStack
-    ports:
-    - name: 27017-tcp
-      port: 27017
-      protocol: TCP
-      targetPort: 27017
-    selector:
-      deployment: mongodb
-    sessionAffinity: None
-    type: ClusterIP
-- apiVersion: v1
-  kind: Service
-  metadata:
-    annotations:
-      openshift.io/generated-by: OpenShiftNewApp
-    creationTimestamp: "2025-03-08T06:58:35Z"
-    labels:
-      app: redis
-      app.kubernetes.io/component: redis
-      app.kubernetes.io/instance: redis
-    name: redis
-    namespace: sganis-dev
-    resourceVersion: "373762620"
-    uid: 0d5ccc07-505c-4d83-9063-21493c71ce54
-  spec:
-    clusterIP: 172.30.20.198
-    clusterIPs:
-    - 172.30.20.198
-    internalTrafficPolicy: Cluster
-    ipFamilies:
-    - IPv4
-    ipFamilyPolicy: SingleStack
-    ports:
-    - name: 6379-tcp
-      port: 6379
-      protocol: TCP
-      targetPort: 6379
-    selector:
-      deployment: redis
-    sessionAffinity: None
-    type: ClusterIP
-
-# build configs
-- apiVersion: build.openshift.io/v1
-  kind: BuildConfig
-  metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"build.openshift.io/v1","kind":"BuildConfig","metadata":{"annotations":{},"labels":{"app":"nolock","component":"frontend"},"name":"frontend","namespace":"sganis-dev"},"spec":{"output":{"to":{"kind":"ImageStreamTag","name":"frontend:latest"}},"source":{"contextDir":"/nolock/frontend","git":{"ref":"main","uri":"https://github.com/sganis/openshift.git"}},"strategy":{"dockerStrategy":{"dockerfilePath":"Dockerfile"}},"triggers":[{"type":"ConfigChange"},{"type":"ImageChange"}]}}
-    creationTimestamp: "2025-03-04T17:04:01Z"
-    generation: 9
-    labels:
-      app: nolock
-      component: frontend
-    name: frontend
-    namespace: sganis-dev
-    resourceVersion: "358611449"
-    uid: fa31c2e0-828e-4866-91ee-63c847da0c27
-  spec:
-    failedBuildsHistoryLimit: 5
-    nodeSelector: null
-    output:
-      to:
-        kind: ImageStreamTag
-        name: frontend:latest
-    postCommit: {}
-    resources: {}
-    runPolicy: Serial
-    source:
-      contextDir: /nolock/frontend
-      git:
-        ref: main
-        uri: https://github.com/sganis/openshift.git
-      type: Git
-    strategy:
-      dockerStrategy:
-        dockerfilePath: Dockerfile
-      type: Docker
-    successfulBuildsHistoryLimit: 5
-    triggers:
-    - type: ConfigChange
-  status:
-    lastVersion: 6
-- apiVersion: build.openshift.io/v1
-  kind: BuildConfig
-  metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"build.openshift.io/v1","kind":"BuildConfig","metadata":{"annotations":{},"labels":{"app":"nolock","component":"service"},"name":"service","namespace":"sganis-dev"},"spec":{"output":{"to":{"kind":"ImageStreamTag","name":"service:latest"}},"source":{"contextDir":"/nolock/service","git":{"ref":"main","uri":"https://github.com/sganis/openshift.git"}},"strategy":{"dockerStrategy":{"dockerfilePath":"Dockerfile"}},"triggers":[{"type":"ConfigChange"},{"type":"ImageChange"}]}}
-    creationTimestamp: "2025-03-04T17:04:02Z"
-    generation: 6
     labels:
       app: nolock
       component: worker
     name: worker
     namespace: sganis-dev
-    resourceVersion: "358575168"
-    uid: 225ddc20-7132-430b-8a91-17b470923bfb
   spec:
-    failedBuildsHistoryLimit: 5
-    nodeSelector: null
-    output:
-      to:
-        kind: ImageStreamTag
-        name: worker:latest
-    postCommit: {}
-    resources: {}
-    runPolicy: Serial
-    source:
-      contextDir: /nolock/worker
-      git:
-        ref: main
-        uri: https://github.com/sganis/openshift.git
-      type: Git
+    progressDeadlineSeconds: 600
+    replicas: 1
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: nolock
+        component: worker
     strategy:
-      dockerStrategy:
-        dockerfilePath: Dockerfile
-      type: Docker
-    successfulBuildsHistoryLimit: 5
-    triggers:
-    - type: ConfigChange
-
-# image streams
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"image.openshift.io/v1","kind":"ImageStream","metadata":{"annotations":{},"labels":{"app":"nolock","component":"frontend"},"name":"frontend","namespace":"sganis-dev"}}
-    creationTimestamp: "2025-03-04T17:04:00Z"
-    generation: 1
-    labels:
-      app: nolock
-      component: frontend
-    name: frontend
-    namespace: sganis-dev
-    resourceVersion: "358612055"
-    uid: e8e38aee-23eb-4b50-98c3-4bd79c05fb6e
-  spec:
-    lookupPolicy:
-      local: false
-  status:
-    dockerImageRepository: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend
-    publicDockerImageRepository: default-route-openshift-image-registry.apps.rm1.0a51.p1.openshiftapps.com/sganis-dev/frontend
-    tags:
-    - items:
-      - created: "2025-03-04T17:26:08Z"
-        dockerImageReference: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend@sha256:a24db0d1720e2d6a200032fc031da27c1efc0ae8716803aa83de3dccfec074d3
-        generation: 1
-        image: sha256:a24db0d1720e2d6a200032fc031da27c1efc0ae8716803aa83de3dccfec074d3
-      - created: "2025-03-04T17:18:30Z"
-        dockerImageReference: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend@sha256:17aec13cabb3daa8b8dd0a85d3614b4ad3ca11e6b95cf2f8a49412bb17d7be6b
-        generation: 1
-        image: sha256:17aec13cabb3daa8b8dd0a85d3614b4ad3ca11e6b95cf2f8a49412bb17d7be6b
-      - created: "2025-03-04T17:14:54Z"
-        dockerImageReference: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend@sha256:6556aa652bc88028a827f22cd222e0a28190973d42a8872a4b6aba3d0ee05564
-        generation: 1
-        image: sha256:6556aa652bc88028a827f22cd222e0a28190973d42a8872a4b6aba3d0ee05564
-      - created: "2025-03-04T17:12:54Z"
-        dockerImageReference: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend@sha256:88d0cdee4e20f0b7cfc86c42a3e12ebdde0948f2ce24d5ef34fc145f2d1551ea
-        generation: 1
-        image: sha256:88d0cdee4e20f0b7cfc86c42a3e12ebdde0948f2ce24d5ef34fc145f2d1551ea
-      - created: "2025-03-04T17:06:53Z"
-        dockerImageReference: image-registry.openshift-image-registry.svc:5000/sganis-dev/frontend@sha256:a1eeea47f7cd812b31b1b9ea5768fb6e8eab027b26201fbdb32f47f8f77d5b2e
-        generation: 1
-        image: sha256:a1eeea47f7cd812b31b1b9ea5768fb6e8eab027b26201fbdb32f47f8f77d5b2e
-      tag: latest
-- apiVersion: image.openshift.io/v1
-  kind: ImageStream
-  metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"image.openshift.io/v1","kind":"ImageStream","metadata":{"annotations":{},"labels":{"app":"nolock","component":"worker"},"name":"worker","namespace":"sganis-dev"}}
-    creationTimestamp: "2025-03-04T17:04:01Z"
-    generation: 1
-    labels:
-      app: nolock
-      component: worker
-    name: worker
-    namespace: sganis-dev
-    resourceVersion: "358576132"
-    uid: 4b7039b6-79b1-4a26-b203-7b141afb6a87
-  spec:
-    lookupPolicy:
-      local: false
-  status:
-    dockerImageRepository: image-registry.openshift-image-registry.svc:5000/sganis-dev/worker
-    publicDockerImageRepository: default-route-openshift-image-registry.apps.rm1.0a51.p1.openshiftapps.com/sganis-dev/worker
-    tags:
-    - items:
-      - created: "2025-03-04T17:13:44Z"
-        dockerImageReference: image-registry.openshift-image-registry.svc:5000/sganis-dev/worker@sha256:64652b65982d89f144edbef1def856d4bfa399e5fc0c70648f9c91966ec32642
-        generation: 1
-        image: sha256:64652b65982d89f144edbef1def856d4bfa399e5fc0c70648f9c91966ec32642
-      tag: latest
-
-# route
-- apiVersion: route.openshift.io/v1
-  kind: Route
-  metadata:
-    annotations:
-      haproxy.router.openshift.io/balance: roundrobin
-      haproxy.router.openshift.io/disable_cookies: "true"
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"route.openshift.io/v1","kind":"Route","metadata":{"annotations":{"haproxy.router.openshift.io/balance":"roundrobin","haproxy.router.openshift.io/disable_cookies":"true"},"labels":{"app":"nolock","component":"frontend"},"name":"frontend","namespace":"sganis-dev"},"spec":{"port":{"targetPort":"http"},"tls":{"termination":"edge"},"to":{"kind":"worker","name":"frontend"},"wildcardPolicy":"None"}}
-      openshift.io/host.generated: "true"
-    creationTimestamp: "2025-03-04T17:04:04Z"
-    labels:
-      app: nolock
-      component: frontend
-    name: frontend
-    namespace: sganis-dev
-    resourceVersion: "358546245"
-    uid: e3c6728e-3f37-43bd-acdc-521d290e0485
-  spec:
-    host: frontend-sganis-dev.apps.rm1.0a51.p1.openshiftapps.com
-    port:
-      targetPort: http
-    tls:
-      termination: edge
-    to:
-      kind: Service
-      name: frontend
-      weight: 100
-    wildcardPolicy: None
-  status:
-    ingress:
-    - conditions:
-      - lastTransitionTime: "2025-03-04T17:04:04Z"
-        status: "True"
-        type: Admitted
-      host: frontend-sganis-dev.apps.rm1.0a51.p1.openshiftapps.com
-      routerCanonicalHostname: router-default.apps.rm1.0a51.p1.openshiftapps.com
-      routerName: default
-      wildcardPolicy: None
-
-# redis
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        annotations:
+          openshift.openshift.io/restartedAt: "2025-03-08T09:51:49.267Z"
+        creationTimestamp: null
+        labels:
+          app: nolock
+          component: worker
+      spec:
+        containers:
+        - env:
+          - name: REDIS_HOST
+            value: redis
+          - name: REDIS_PORT
+            value: "6379"
+          - name: REDIS_DB
+            value: "0"
+          - name: REDIS_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: REDIS_PASSWORD
+                name: nolock
+          - name: MONGO_HOST
+            value: mongodb
+          - name: MONGO_PORT
+            value: "27017"
+          - name: MONGO_DB
+            value: logs_db
+          - name: MONGO_COLLECTION
+            value: logs
+          - name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: MONGO_PASSWORD
+                name: nolock
+          image: image-registry.openshift-image-registry.svc:5000/sganis-dev/worker:latest
+          imagePullPolicy: Always
+          name: worker
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    observedGeneration: 5
+    readyReplicas: 1
+    replicas: 1
+    updatedReplicas: 1
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
-    annotations:
-      template.alpha.openshift.io/wait-for-ready: "true"
-    creationTimestamp: "2025-03-04T16:50:15Z"
-    generation: 2
     labels:
       app: nolock
-      app.kubernetes.io/part-of: nolock
-      template: redis-ephemeral-template
-      template.openshift.io/template-instance-owner: effde6ad-c715-425c-97c4-eab8204dcd1e
     name: redis
     namespace: sganis-dev
-    resourceVersion: "358619819"
-    uid: 049766aa-6208-47d2-859a-4b212c8639ac
   spec:
     replicas: 1
     revisionHistoryLimit: 10
@@ -596,8 +279,9 @@ items:
         securityContext: {}
         terminationGracePeriodSeconds: 30
         volumes:
-        - emptyDir: {}
-          name: redis-data
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis
     test: false
     triggers:
     - imageChangeParams:
@@ -611,20 +295,6 @@ items:
         lastTriggeredImage: image-registry.openshift-image-registry.svc:5000/openshift/redis@sha256:404eb18b54c078edc46d39a0d441ef0da8b8fabcc862fbeff032ee8ccbe6ec84
       type: ImageChange
     - type: ConfigChange
-  status:
-    availableReplicas: 1
-    conditions:
-    - lastTransitionTime: "2025-03-04T16:50:27Z"
-      lastUpdateTime: "2025-03-04T16:50:27Z"
-      message: Deployment config has minimum availability.
-      status: "True"
-      type: Available
-    - lastTransitionTime: "2025-03-04T16:50:29Z"
-      lastUpdateTime: "2025-03-04T16:50:29Z"
-      message: replication controller "redis-1" successfully rolled out
-      reason: NewReplicationControllerAvailable
-      status: "True"
-      type: Progressing
     details:
       causes:
       - type: ConfigChange
@@ -635,4 +305,238 @@ items:
     replicas: 1
     unavailableReplicas: 0
     updatedReplicas: 1
-
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: nolock
+    name: frontend
+    namespace: sganis-dev
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: frontend:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: /nolock/frontend
+      git:
+        ref: main
+        uri: https://github.com/sganis/openshift.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - type: ConfigChange
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: nolock
+    name: worker
+    namespace: sganis-dev
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: worker:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: /nolock/worker
+      git:
+        uri: https://github.com/sganis/openshift.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - generic:
+        secretReference:
+          name: worker-generic-webhook-secret
+      type: Generic
+    - github:
+        secretReference:
+          name: worker-github-webhook-secret
+      type: GitHub
+    - type: ConfigChange
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: nolock
+    name: frontend
+    namespace: sganis-dev
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: nolock
+    name: mongodb
+    namespace: sganis-dev
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: mongo:latest
+      from:
+        kind: DockerImage
+        name: mongo:latest
+      generation: 2
+      importPolicy:
+        importMode: Legacy
+      name: latest
+      referencePolicy:
+        type: Source
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: nolock
+    name: worker
+    namespace: sganis-dev
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: nolock
+    name: frontend
+    namespace: sganis-dev
+  spec:
+    clusterIP: 172.30.71.116
+    clusterIPs:
+    - 172.30.71.116
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 5000
+    selector:
+      app: nolock
+      component: frontend
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: nolock
+      app.kubernetes.io/component: mongodb
+      app.kubernetes.io/instance: mongodb
+    name: mongodb
+    namespace: sganis-dev
+  spec:
+    clusterIP: 172.30.20.198
+    clusterIPs:
+    - 172.30.20.198
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: 27017-tcp
+      port: 27017
+      protocol: TCP
+      targetPort: 27017
+    selector:
+      deployment: mongodb
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: nolock
+    name: redis
+    namespace: sganis-dev
+  spec:
+    clusterIP: 172.30.66.19
+    clusterIPs:
+    - 172.30.66.19
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: redis
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+    selector:
+      name: redis
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    annotations:
+      haproxy.router.openshift.io/balance: roundrobin
+      haproxy.router.openshift.io/disable_cookies: "true"
+    labels:
+      app: nolock
+    name: frontend
+    namespace: sganis-dev
+  spec:
+    host: frontend-sganis-dev.apps.rm1.0a51.p1.openshiftapps.com
+    port:
+      targetPort: http
+    tls:
+      termination: edge
+    to:
+      kind: Service
+      name: frontend
+      weight: 100
+    wildcardPolicy: None
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: mongodb
+    namespace: sganis-dev
+    labels:
+      app: nolock
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi
+    storageClassName: efs-sc
+    volumeMode: Filesystem
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: redis
+    namespace: sganis-dev
+    labels:
+      app: nolock
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+    storageClassName: efs-sc
+    volumeMode: Filesystem
