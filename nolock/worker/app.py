@@ -7,7 +7,7 @@ from pymongo import MongoClient
 # Redis Configuration
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_PASS = os.getenv("REDIS_PASS", None)
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_QUEUE = "log_queue"
 
@@ -24,7 +24,7 @@ redis_client = redis.StrictRedis(
     host=REDIS_HOST, 
     port=REDIS_PORT, 
     db=REDIS_DB, 
-    password=REDIS_PASS if REDIS_PASS else None, 
+    password=REDIS_PASSWORD if REDIS_PASSWORD else None, 
     decode_responses=True
 )
 

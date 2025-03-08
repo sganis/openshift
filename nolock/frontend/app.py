@@ -23,14 +23,14 @@ MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", None)
 print(f"REDIS_HOST: {REDIS_HOST}")
 print(f"REDIS_PORT: {REDIS_PORT}")
 print(f"REDIS_DB: {REDIS_DB}")
-print(f"REDIS_PASSWORD: {REDIS_PASWORD}")
+print(f"REDIS_PASSWORD: {REDIS_PASSWORD}")
 print(f"MONGO_HOST: {MONGO_HOST}")
 print(f"MONGO_PORT: {MONGO_PORT}")
 
 # Redis client
 redis_client = redis.StrictRedis(
     host=REDIS_HOST, 
-    password=REDIS_PASWORD if REDIS_PASSWORD else None,
+    password=REDIS_PASSWORD if REDIS_PASSWORD else None,
     port=REDIS_PORT,
     db=REDIS_DB, 
     decode_responses=True
