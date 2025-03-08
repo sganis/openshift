@@ -30,7 +30,7 @@ print(f"MONGO_PORT: {MONGO_PORT}")
 # Redis client
 redis_client = redis.StrictRedis(
     host=REDIS_HOST, 
-    password=REDIS_PASWORD if REDIS_PASS WORD else None,
+    password=REDIS_PASWORD if REDIS_PASSWORD else None,
     port=REDIS_PORT,
     db=REDIS_DB, 
     decode_responses=True

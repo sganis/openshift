@@ -419,7 +419,7 @@ items:
   metadata:
     annotations:
       kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"image.openshift.io/v1","kind":"ImageStream","metadata":{"annotations":{},"labels":{"app":"nolock","component":"service"},"name":"service","namespace":"sganis-dev"}}
+        {"apiVersion":"image.openshift.io/v1","kind":"ImageStream","metadata":{"annotations":{},"labels":{"app":"nolock","component":"worker"},"name":"worker","namespace":"sganis-dev"}}
     creationTimestamp: "2025-03-04T17:04:01Z"
     generation: 1
     labels:
