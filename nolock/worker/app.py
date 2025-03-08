@@ -1,7 +1,7 @@
-import redis
-import json
 import os
 import time
+import json
+import redis
 from pymongo import MongoClient
 
 # Redis Configuration

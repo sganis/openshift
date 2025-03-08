@@ -1,6 +1,6 @@
-from flask import Flask, jsonify, request
 import os
 import json
+from flask import Flask, jsonify, request
 import redis
 from pymongo import MongoClient
 
