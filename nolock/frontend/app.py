@@ -26,6 +26,10 @@ print(f"REDIS_DB: {REDIS_DB}")
 print(f"REDIS_PASSWORD: {REDIS_PASSWORD}")
 print(f"MONGO_HOST: {MONGO_HOST}")
 print(f"MONGO_PORT: {MONGO_PORT}")
+print(f"MONGO_DB: {MONGO_DB}")
+print(f"MONGO_COLLECTION: {MONGO_COLLECTION}")
+print(f"MONGO_USER: {MONGO_USER}")
+print(f"MONGO_PASSWORD: {MONGO_PASSWORD}")
 
 # Redis client
 redis_client = redis.StrictRedis(
