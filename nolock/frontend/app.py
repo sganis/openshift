@@ -59,6 +59,7 @@ def index():
 @app.route("/logs/<int:n>", methods=["GET"])
 def get_logs(n):
     """Retrieve the last N logs from MongoDB."""
+    hits = redis_client.incr("hits")
     try:
         logs = list(mongo_collection.find().sort("timestamp", -1).limit(n))
 
