@@ -10,7 +10,9 @@ metadata:
 spec:
   source:
     type: Git
+    contextDir: /hello
     git:
+      ref: main
       uri: "https://github.com/sganis/openshift.git"  # Uses Dockerfile from repo root
   strategy:
     type: Docker
