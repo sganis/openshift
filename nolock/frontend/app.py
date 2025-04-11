@@ -5,9 +5,13 @@ from flask import Flask, jsonify, request
 import redis
 from pymongo import MongoClient
 import requests
-from jose import jwt
+from jose import jwt, JWTError, ExpiredSignatureError
 
 app = Flask(__name__)
+
+# Cache token in memory
+_cached_token = None
+
 
 # Environment variables
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
@@ -56,7 +60,7 @@ mongo_collection = mongo_db[MONGO_COLLECTION]
 JWT_SECRET = os.environ.get("JWT_SECRET", "your-dev-secret")
 JWT_ISSUER = "api-a"
 JWT_AUDIENCE = "api-b"
-JWT_EXP_SECONDS = 300  # Token is valid for 5 minutes
+JWT_EXP_SECONDS = 30  # Token is valid for 3 seconds
 EXTERNAL_API_URL = "http://external:5001"  # Replace path as needed
 
 def generate_jwt():
@@ -71,17 +75,38 @@ def generate_jwt():
     token = jwt.encode(claims=payload, key=JWT_SECRET, algorithm="HS256")
     return token
 
+def get_valid_token():
+    global _cached_token
+    if _cached_token:
+        try:
+            jwt.decode(_cached_token, JWT_SECRET, algorithms=["HS256"], audience=JWT_AUDIENCE)
+            return _cached_token
+        except ExpiredSignatureError:
+            print("⚠️ Token expired, regenerating.")
+        except JWTError as e:
+            print(f"⚠️ Invalid token: {e}")
+    _cached_token = generate_jwt()
+    return _cached_token
+
 @app.route("/external", methods=["GET"])
 def call_external_api():
-    token = generate_jwt()
+    token = get_valid_token()
     headers = {
         "Authorization": f"Bearer {token}"
     }
 
     try:
-        response = requests.get(f'{EXTERNAL_API_URL}/data', headers=headers)
-        response.raise_for_status()
+        response = requests.get(f'{EXTERNAL_API_URL}/data', headers=headers) 
+
+        if response.status_code == 401:
+            print("🔄 Auth error, possibly expired token. Retrying...")
+            # Try once more with a fresh token
+            _cached_token = generate_jwt()
+            headers["Authorization"] = f"Bearer {_cached_token}"
+            response = requests.get(EXTERNAL_API_URL, headers=headers)
+            
         return response.json()
+    
     except requests.exceptions.RequestException as e:
         print(e)
         return {"error": str(e)}
