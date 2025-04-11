@@ -12,6 +12,9 @@ jobs:
   trigger-frontend:
     runs-on: ubuntu-latest
     steps:
+      - name: Debug – Check if token is loaded
+        run: |
+            echo "Token prefix: ${TOKEN:0:10}"
       - name: Trigger BuildConfig frontend
         run: |
           curl -k -X POST \
