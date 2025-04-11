@@ -50,6 +50,8 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
+    annotations:
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"frontend:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"frontend\")].image"}]'
     labels:
       app: nolock
       component: frontend
@@ -178,6 +180,8 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
+    annotations:
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"worker:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"worker\")].image"}]'
     labels:
       app: nolock
       component: worker
