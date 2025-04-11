@@ -57,7 +57,7 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "your-dev-secret")
 JWT_ISSUER = "api-a"
 JWT_AUDIENCE = "api-b"
 JWT_EXP_SECONDS = 300  # Token is valid for 5 minutes
-EXTERNAL_API_URL = "http://external/data:5000"  # Replace path as needed
+EXTERNAL_API_URL = "http://external:5001"  # Replace path as needed
 
 def generate_jwt():
     now = int(time.time())
@@ -79,12 +79,12 @@ def call_external_api():
     }
 
     try:
-        response = requests.get(EXTERNAL_API_URL, headers=headers)
+        response = requests.get(f'{EXTERNAL_API_URL}/data', headers=headers)
         response.raise_for_status()
-        return jsonify({response.json()}), 200
+        return {response.json()}
     except requests.exceptions.RequestException as e:
         print(e)
-        return jsonify({"error": e.response}), 500
+        return {"error": str(e)}
 
 
 @app.route("/")
