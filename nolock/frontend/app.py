@@ -81,7 +81,7 @@ def call_external_api():
     try:
         response = requests.get(f'{EXTERNAL_API_URL}/data', headers=headers)
         response.raise_for_status()
-        return {response.json()}
+        return response.json()
     except requests.exceptions.RequestException as e:
         print(e)
         return {"error": str(e)}

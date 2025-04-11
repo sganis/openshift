@@ -663,6 +663,28 @@ items:
   metadata:
     labels:
       app: nolock
+    name: external
+    namespace: sganis-dev
+  spec:
+    internalTrafficPolicy: Cluster
+    ipFamilies:
+    - IPv4
+    ipFamilyPolicy: SingleStack
+    ports:
+    - name: http
+      port: 5001
+      protocol: TCP
+      targetPort: 5001
+    selector:
+      app: nolock
+      component: external
+    sessionAffinity: None
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: nolock
       app.kubernetes.io/component: mongodb
       app.kubernetes.io/instance: mongodb
     name: mongodb
