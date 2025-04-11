@@ -1,8 +1,11 @@
 import os
+import time
 import json
 from flask import Flask, jsonify, request
 import redis
 from pymongo import MongoClient
+import requests
+from jose import jwt
 
 app = Flask(__name__)
 
@@ -47,6 +50,41 @@ redis_client = redis.StrictRedis(
 mongo_client = MongoClient(f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/")
 mongo_db = mongo_client[MONGO_DB]
 mongo_collection = mongo_db[MONGO_COLLECTION]
+
+
+# Config
+JWT_SECRET = os.environ.get("JWT_SECRET", "your-dev-secret")
+JWT_ISSUER = "api-a"
+JWT_AUDIENCE = "api-b"
+JWT_EXP_SECONDS = 300  # Token is valid for 5 minutes
+EXTERNAL_API_URL = "http://external/data"  # Replace path as needed
+
+def generate_jwt():
+    now = int(time.time())
+    payload = {
+        "iss": JWT_ISSUER,
+        "aud": JWT_AUDIENCE,
+        "iat": now,
+        "exp": now + JWT_EXP_SECONDS,
+        "scope": "internal-call"
+    }
+    token = jwt.encode(claims=payload, key=JWT_SECRET, algorithm="HS256")
+    return token
+
+@app.route("/external")
+def call_external_api():
+    token = generate_jwt()
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    try:
+        response = requests.get(EXTERNAL_API_URL, headers=headers)
+        response.raise_for_status()
+        return jsonify({response.json()}), 200
+    except requests.exceptions.RequestException as e:
+        print(e)
+        return jsonify({"error": e.response}), 500
 
 
 @app.route("/")
