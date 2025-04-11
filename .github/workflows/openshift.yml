@@ -62,4 +62,32 @@ jobs:
               "apiVersion": "build.openshift.io/v1", 
               "metadata": { "name": "worker" } 
             }'
+            
+  trigger-external:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Required to get the previous commit
 
+      - name: Get list of changed files
+        id: changes
+        run: |
+          git diff --name-only HEAD^ HEAD > changed.txt
+          echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
+
+      - name: Trigger external BuildConfig if external changed
+        if: contains(env.CHANGED_FILES, 'external/')
+        run: |
+          curl -k -X POST \
+            "$URL/external/instantiate" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{ 
+              "kind": "BuildRequest", 
+              "apiVersion": "build.openshift.io/v1", 
+              "metadata": { "name": "external" } 
+            }'
+
+                                  
