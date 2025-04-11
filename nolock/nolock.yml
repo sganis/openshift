@@ -53,6 +53,7 @@ items:
     labels:
       app: nolock
       component: frontend
+      app.kubernetes.io/part-of: nolock
     name: frontend
     namespace: sganis-dev
   spec:
@@ -122,6 +123,7 @@ items:
   metadata:
     labels:
       app: nolock
+      app.kubernetes.io/part-of: nolock
     name: mongodb
     namespace: sganis-dev
   spec:
@@ -179,6 +181,7 @@ items:
     labels:
       app: nolock
       component: worker
+      app.kubernetes.io/part-of: nolock
     name: worker
     namespace: sganis-dev
   spec:

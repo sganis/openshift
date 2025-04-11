@@ -1,0 +1,41 @@
+# .github/workflows/openshift.yml
+name: Trigger OpenShift Build
+on:
+  push:
+    branches:
+      - main
+env:
+  URL: https://api.rm1.0a51.p1.openshiftapps.com:6443/apis/build.openshift.io/v1/namespaces/sganis-dev/buildconfigs
+  TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+
+jobs:
+  trigger-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger BuildConfig frontend
+        run: |
+          curl -k -X POST \
+            "$URL/frontend/instantiate" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{ 
+              "kind": "BuildRequest", 
+              "apiVersion": "build.openshift.io/v1", 
+              "metadata": { "name": "frontend" }
+              }'
+
+  trigger-worker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger BuildConfig worker
+        run: |
+          curl -k -X POST \
+            "$URL/worker/instantiate" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{ 
+              "kind": "BuildRequest", 
+              "apiVersion": "build.openshift.io/v1", 
+              "metadata": { "name": "worker" } 
+            }'
+
