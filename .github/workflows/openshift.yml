@@ -12,8 +12,19 @@ jobs:
   trigger-frontend:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger BuildConfig frontend
-        if: ${{ github.event.commits.*.modified }} | join(' ') | contains('frontend/')
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Required to get the previous commit
+
+      - name: Get list of changed files
+        id: changes
+        run: |
+          git diff --name-only HEAD^ HEAD > changed.txt
+          echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
+
+      - name: Trigger frontend BuildConfig if frontend changed
+        if: contains(env.CHANGED_FILES, 'frontend/')
         run: |
           curl -k -X POST \
             "$URL/frontend/instantiate" \
@@ -28,8 +39,19 @@ jobs:
   trigger-worker:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger BuildConfig worker
-        if: ${{ github.event.commits.*.modified }} | join(' ') | contains('worker/')
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Required to get the previous commit
+
+      - name: Get list of changed files
+        id: changes
+        run: |
+          git diff --name-only HEAD^ HEAD > changed.txt
+          echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
+
+      - name: Trigger worker BuildConfig if worker changed
+        if: contains(env.CHANGED_FILES, 'worker/')
         run: |
           curl -k -X POST \
             "$URL/worker/instantiate" \
