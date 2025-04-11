@@ -82,6 +82,11 @@ items:
       spec:
         containers:
         - env:
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                key: JWT_SECRET
+                name: nolock
           - name: REDIS_HOST
             value: redis
           - name: REDIS_PORT
@@ -286,29 +291,10 @@ items:
       spec:
         containers:
         - env:
-          - name: REDIS_HOST
-            value: redis
-          - name: REDIS_PORT
-            value: "6379"
-          - name: REDIS_DB
-            value: "0"
-          - name: REDIS_PASSWORD
+          - name: JWT_SECRET
             valueFrom:
               secretKeyRef:
-                key: REDIS_PASSWORD
-                name: nolock
-          - name: MONGO_HOST
-            value: mongodb
-          - name: MONGO_PORT
-            value: "27017"
-          - name: MONGO_DB
-            value: logs_db
-          - name: MONGO_COLLECTION
-            value: logs
-          - name: MONGO_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                key: MONGO_PASSWORD
+                key: JWT_SECRET
                 name: nolock
           image: image-registry.openshift-image-registry.svc:5000/sganis-dev/external:latest
           imagePullPolicy: Always

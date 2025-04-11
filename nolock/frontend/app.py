@@ -71,7 +71,7 @@ def generate_jwt():
     token = jwt.encode(claims=payload, key=JWT_SECRET, algorithm="HS256")
     return token
 
-@app.route("/external")
+@app.route("/external", methods=["GET"])
 def call_external_api():
     token = generate_jwt()
     headers = {

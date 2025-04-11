@@ -1,74 +1,43 @@
-from flask import Flask, request, jsonify
 import os
-import time
+from flask import Flask, request, jsonify
+from jose import jwt, JWTError
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Environment variables
-DB_PASSWORD = os.getenv("DB_PASSWORD", "hello")
-print(f'DB_PASSWORD: {DB_PASSWORD}')
+# Config
+JWT_SECRET = os.environ.get("JWT_SECRET", "your-dev-secret")
+JWT_ISSUER = "api-a"
+JWT_AUDIENCE = "api-b"
+JWT_ALGORITHM = "HS256"
 
-# Dictionary to track failed attempts: {client_ip: {"count": int, "lock_time": float}}
-failed_attempts = {}
-
-# Constants
-MAX_ATTEMPTS = 3
-LOCKOUT_TIME = 60  # 1 minute
+def verify_jwt(token):
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM], audience=JWT_AUDIENCE)
+        if payload.get("iss") != JWT_ISSUER:
+            raise JWTError("Invalid issuer")
+        return payload
+    except JWTError as e:
+        return None
 
 @app.route("/data", methods=["GET"])
 def get_data():
-    client_ip = request.remote_addr
-    auth_header = request.headers.get("Authorization", "")
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized"}), 401
 
-    # Check if client is locked
-    if client_ip in failed_attempts:
-        attempts = failed_attempts[client_ip]
-        time_since_lock = time.time() - attempts["lock_time"]
-
-        if attempts["count"] >= MAX_ATTEMPTS:
-            if time_since_lock < LOCKOUT_TIME:
-                return jsonify({
-                    "error": "Account locked. Try again later.",
-                    "failed attempts": attempts["count"],
-                    "lock time remaining": round(LOCKOUT_TIME - time_since_lock, 2),
-                }), 403
-            else:
-                # Reset failed attempts after lockout time expires
-                del failed_attempts[client_ip]
-
-    # Validate Authorization header
-    if not auth_header.startswith("Bearer "):
-        return jsonify({
-            "error": "Unauthorized - Missing or malformed token.",
-        }), 401
-
-    token = auth_header.split(" ")[-1]
-    
-    # Validate password
-    if token != DB_PASSWORD:
-        failed_attempts[client_ip] = failed_attempts.get(client_ip, {"count": 0, "lock_time": time.time()})
-        failed_attempts[client_ip]["count"] += 1
-
-        if failed_attempts[client_ip]["count"] >= MAX_ATTEMPTS:
-            failed_attempts[client_ip]["lock_time"] = time.time()
-            return jsonify({
-                "error": "Account locked due to multiple failed attempts.",
-                "failed attempts": failed_attempts[client_ip]["count"],
-                "lock time remaining": LOCKOUT_TIME,
-            }), 403
-        else:
-            return jsonify({
-                "error": "Unauthorized",
-                "failed attempts": failed_attempts[client_ip]["count"],
-            }), 401
-
-    # Successful authentication, reset failed attempts
-    failed_attempts.pop(client_ip, None)
+    token = auth_header.split(" ")[1]
+    payload = verify_jwt(token)
+    if not payload:
+        return jsonify({"error": "Invalid or expired token"}), 401
 
     return jsonify({
-        "app": "Service",
-        "data": "Secret Data from Service!",
+        "message": "Authenticated request successful!",
+        "from": payload.get("iss"),
+        "scope": payload.get("scope"),
+        "iat": datetime.fromtimestamp(payload.get("iat")).isoformat(),
+        "exp": datetime.fromtimestamp(payload.get("exp")).isoformat(),
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001)
+    app.run(host="0.0.0.0", port=5000)
