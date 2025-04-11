@@ -12,10 +12,8 @@ jobs:
   trigger-frontend:
     runs-on: ubuntu-latest
     steps:
-      - name: Debug – Check if token is loaded
-        run: |
-            echo "Token prefix: ${TOKEN:0:10}"
       - name: Trigger BuildConfig frontend
+        if: ${{ github.event.commits.*.modified }} | join(' ') | contains('frontend/')
         run: |
           curl -k -X POST \
             "$URL/frontend/instantiate" \
@@ -31,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger BuildConfig worker
+        if: ${{ github.event.commits.*.modified }} | join(' ') | contains('worker/')
         run: |
           curl -k -X POST \
             "$URL/worker/instantiate" \
