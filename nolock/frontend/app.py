@@ -57,7 +57,7 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "your-dev-secret")
 JWT_ISSUER = "api-a"
 JWT_AUDIENCE = "api-b"
 JWT_EXP_SECONDS = 300  # Token is valid for 5 minutes
-EXTERNAL_API_URL = "http://external/data"  # Replace path as needed
+EXTERNAL_API_URL = "http://external/data:5000"  # Replace path as needed
 
 def generate_jwt():
     now = int(time.time())
