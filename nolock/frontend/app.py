@@ -117,7 +117,14 @@ def index():
 
     redis_client.rpush(REDIS_QUEUE, json.dumps(log_entry))
 
-    return jsonify({"status": "queued", "version": version, "message": log_entry}), 200
+    external_data = call_external_api()
+
+    return jsonify({
+        "status": "queued", 
+        "version": version, 
+        "message": log_entry,
+        "external_data": external_data
+    }), 200
 
 
 @app.route("/logs/<int:n>", methods=["GET"])
