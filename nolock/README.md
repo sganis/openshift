@@ -17,4 +17,4 @@ oc whoami --show-server
 oc policy add-role-to-user edit system:serviceaccount:sganis-dev:builder --rolebinding-name=builder-edit -n sganis-dev
 
 # create token for the builder service account, needed by github
-oc create token builder
+oc create token builder --duration=365d
