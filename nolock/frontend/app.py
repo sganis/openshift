@@ -54,7 +54,7 @@ def index():
         "hits": hits
     }
     redis_client.rpush(REDIS_QUEUE, json.dumps(log_entry))
-    return jsonify({"status": "queued", "message": log_entry}), 202
+    return jsonify({"status": "queued", "version":2, "message": log_entry}), 202
 
 @app.route("/logs/<int:n>", methods=["GET"])
 def get_logs(n):
