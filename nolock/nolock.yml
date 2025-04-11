@@ -366,11 +366,14 @@ items:
       spec:
         containers:
         - env:
-          - name: MONGO_INITDB_ROOT_PASSWORD
-            value: "1234"
-          - name: MONGO_INITDB_ROOT_USERNAME
+          - name: MONGODB_ROOT_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: MONGO_PASSWORD
+                name: nolock
+          - name: MONGODB_ROOT_USER
             value: admin
-          image: bitnami/mongodb:6.0
+          image: bitnami/mongodb:latest
           imagePullPolicy: IfNotPresent
           name: mongodb
           ports:
