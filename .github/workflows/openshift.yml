@@ -6,7 +6,7 @@ on:
       - main
 env:
   URL: https://api.rm1.0a51.p1.openshiftapps.com:6443/apis/build.openshift.io/v1/namespaces/sganis-dev/buildconfigs
-  TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+  TOKEN: ${{ secrets.OPENSHIFT_BUILDER_TOKEN }}
 
 jobs:
   trigger-frontend:
