@@ -66,7 +66,7 @@ def index():
         version = int(version)
 
     # Compare and update version if hostname changed
-    if last_hostname is None or last_hostname.decode() != hostname:
+    if last_hostname is None or last_hostname != hostname:
         version += 1
         redis_client.set(VERSION_KEY, version)
         redis_client.set(HOST_KEY, hostname)
