@@ -134,6 +134,9 @@ def index():
         redis_client.set(HOST_KEY, hostname)
 
     hits = redis_client.incr("hits")
+    
+    # Get the length of the Redis queue
+    queue_length = redis_client.llen(REDIS_QUEUE)
 
     log_entry = {
         "hostname": hostname,
@@ -147,6 +150,7 @@ def index():
     return jsonify({
         "status": "queued", 
         "version": version, 
+        "queue_length": queue_length,
         "message": log_entry,
         "external_data": external_data
     }), 200
