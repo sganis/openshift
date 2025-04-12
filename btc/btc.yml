@@ -52,7 +52,7 @@ items:
       spec:
         containers:
           - name: btc
-            image: image-registry.openshift-image-registry.svc:5000/sganis-dev/btc:latest
+            image: btc:latest
             imagePullPolicy: Always
             args:
               - "-testnet=1"
