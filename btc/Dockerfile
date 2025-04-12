@@ -10,6 +10,9 @@ RUN groupmod -g 101 bitcoin && \
     chown -R bitcoin:bitcoin /home/bitcoin && \
     chmod -R 700 /home/bitcoin
 
+# Disable the default entrypoint script from base image
+ENTRYPOINT []
+
 # Revert to non-root user (bitcoin)
 USER bitcoin
 

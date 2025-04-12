@@ -63,7 +63,7 @@ jobs:
               "metadata": { "name": "worker" } 
             }'
             
-  trigger-external:
+  trigger-btc:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -77,17 +77,43 @@ jobs:
           git diff --name-only HEAD^ HEAD > changed.txt
           echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
 
-      - name: Trigger external BuildConfig if external changed
-        if: contains(env.CHANGED_FILES, 'external/')
+      - name: Trigger btc BuildConfig if btc changed
+        if: contains(env.CHANGED_FILES, 'btc/')
         run: |
           curl -k -X POST \
-            "$URL/external/instantiate" \
+            "$URL/btc/instantiate" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{ 
               "kind": "BuildRequest", 
               "apiVersion": "build.openshift.io/v1", 
-              "metadata": { "name": "external" } 
+              "metadata": { "name": "btc" } 
             }'
 
-                                  
+            trigger-btc:
+              runs-on: ubuntu-latest
+              steps:
+                - name: Check out code
+                  uses: actions/checkout@v4
+                  with:
+                    fetch-depth: 2  # Required to get the previous commit
+          
+                - name: Get list of changed files
+                  id: changes
+                  run: |
+                    git diff --name-only HEAD^ HEAD > changed.txt
+                    echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
+          
+                - name: Trigger btc BuildConfig if btc changed
+                  if: contains(env.CHANGED_FILES, 'btc/')
+                  run: |
+                    curl -k -X POST \
+                      "$URL/btc/instantiate" \
+                      -H "Authorization: Bearer $TOKEN" \
+                      -H "Content-Type: application/json" \
+                      -d '{ 
+                        "kind": "BuildRequest", 
+                        "apiVersion": "build.openshift.io/v1", 
+                        "metadata": { "name": "btc" } 
+                      }'
+                                            

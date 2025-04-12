@@ -25,6 +25,8 @@ items:
   metadata:
     name: btc
     namespace: sganis-dev
+    annotations:
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"btc:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"btc\")].image"}]'
     labels:
       app: btc
       app.kubernetes.io/part-of: btc
