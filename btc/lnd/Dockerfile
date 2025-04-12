@@ -1,13 +1,11 @@
 FROM lightninglabs/lnd:v0.19.0-beta.rc2
 
-# Create the LND data directory with open group permissions
-RUN mkdir -p /root/.lnd && \
-    chmod -R 0770 /root/.lnd
+# Create a writable directory for LND data that works with random UIDs
+RUN mkdir -p /data/.lnd && \
+    chgrp -R 0 /data/.lnd && \
+    chmod -R g+rwX /data/.lnd
 
-# Set group ownership to root group (GID 0) so OpenShift-assigned user can write
-RUN chgrp -R 0 /root/.lnd
-
-# Allow any user in group 0 to read/write
-RUN chmod -R g+rwX /root/.lnd
+# Default to the safe path
+ENV LND_DIR=/data/.lnd
 
 ENTRYPOINT ["lnd"]

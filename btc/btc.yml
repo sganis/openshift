@@ -156,7 +156,7 @@ items:
             image: lnd:latest
             imagePullPolicy: Always
             args:
-              - "--lnddir=/root/.lnd"
+              - "--lnddir=/data/.lnd"
               - "--bitcoin.regtest"
               - "--bitcoin.node=bitcoind"
               - "--bitcoind.rpchost=btcd:18443"
@@ -178,7 +178,7 @@ items:
               - containerPort: 10009
               - containerPort: 8080
             volumeMounts:
-              - mountPath: /root/.lnd
+              - mountPath: /data/.lnd
                 name: lnd-1-data
             resources: 
               limits:
