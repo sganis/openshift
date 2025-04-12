@@ -63,7 +63,7 @@ jobs:
               "metadata": { "name": "worker" } 
             }'
             
-  trigger-btc:
+  trigger-btcd:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -78,42 +78,42 @@ jobs:
           echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
 
       - name: Trigger btc BuildConfig if btc changed
-        if: contains(env.CHANGED_FILES, 'btc/')
+        if: contains(env.CHANGED_FILES, 'btcd/')
         run: |
           curl -k -X POST \
-            "$URL/btc/instantiate" \
+            "$URL/btcd/instantiate" \
             -H "Authorization: Bearer $TOKEN" \
             -H "Content-Type: application/json" \
             -d '{ 
               "kind": "BuildRequest", 
               "apiVersion": "build.openshift.io/v1", 
-              "metadata": { "name": "btc" } 
+              "metadata": { "name": "btcd" } 
             }'
 
-            trigger-btc:
-              runs-on: ubuntu-latest
-              steps:
-                - name: Check out code
-                  uses: actions/checkout@v4
-                  with:
-                    fetch-depth: 2  # Required to get the previous commit
-          
-                - name: Get list of changed files
-                  id: changes
-                  run: |
-                    git diff --name-only HEAD^ HEAD > changed.txt
-                    echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
-          
-                - name: Trigger btc BuildConfig if btc changed
-                  if: contains(env.CHANGED_FILES, 'btc/')
-                  run: |
-                    curl -k -X POST \
-                      "$URL/btc/instantiate" \
-                      -H "Authorization: Bearer $TOKEN" \
-                      -H "Content-Type: application/json" \
-                      -d '{ 
-                        "kind": "BuildRequest", 
-                        "apiVersion": "build.openshift.io/v1", 
-                        "metadata": { "name": "btc" } 
-                      }'
-                                            
+  trigger-lnd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Required to get the previous commit
+
+      - name: Get list of changed files
+        id: changes
+        run: |
+          git diff --name-only HEAD^ HEAD > changed.txt
+          echo "CHANGED_FILES=$(cat changed.txt | xargs)" >> $GITHUB_ENV
+
+      - name: Trigger lnd BuildConfig if lnd changed
+        if: contains(env.CHANGED_FILES, 'lnd/')
+        run: |
+          curl -k -X POST \
+            "$URL/lnd/instantiate" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{ 
+              "kind": "BuildRequest", 
+              "apiVersion": "build.openshift.io/v1", 
+              "metadata": { "name": "lnd" } 
+            }'
+            
