@@ -632,3 +632,29 @@ items:
       name: frontend
       weight: 100
     wildcardPolicy: None
+- apiVersion: autoscaling/v2
+  kind: HorizontalPodAutoscaler
+  metadata:
+    name: frontend
+    namespace: sganis-dev
+  spec:
+    minReplicas: 1
+    maxReplicas: 10
+    metrics:
+    - resource:
+        name: cpu
+        target:
+          averageUtilization: 90
+          type: Utilization
+      type: Resource
+    scaleTargetRef:
+      apiVersion: apps/v1
+      kind: Deployment
+      name: frontend
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 60
+        policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 60
