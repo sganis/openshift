@@ -8,8 +8,7 @@ RUN mkdir -p /data/.lnd && \
 
 RUN echo '#!/bin/bash' > /app/env.sh && \
     echo 'export LND_DIR=/data/.lnd' >> /app/env.sh && \
-    echo "alias lncli='lncli --network=regtest --lnddir=/data/.lnd'" >> /app/env.sh && 
-
-RUN echo 'source /app/env.sh' >> /etc/bashrc
+    echo "alias lncli='lncli --network=regtest --lnddir=/data/.lnd'" >> /app/env.sh && \
+    echo 'source /app/env.sh' >> /etc/bashrc
 
 ENTRYPOINT ["lnd"]
