@@ -55,6 +55,7 @@ items:
             image: btc:latest
             imagePullPolicy: Always
             args:
+              - "-datadir=/home/bitcoin/.bitcoin"
               - "-testnet=1"
               - "-prune=550"
               - "-server=1"
