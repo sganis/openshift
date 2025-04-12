@@ -9,6 +9,4 @@ RUN apt update && \
     chown -R 101:0 /home/bitcoin && \
     chmod -R g+rwX /home/bitcoin
 
-USER 1001
-
 ENTRYPOINT ["bitcoind"]
