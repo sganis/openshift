@@ -47,6 +47,7 @@ docker run -d ^
   --listen=0.0.0.0:9735 
 
 # test:
-lncli --network=regtest create
-lncli --network=regtest getinfo
+alias lncli='lncli --network=regtest --lnddir=/data/.lnd' 
+lncli create
+lncli getinfo
 

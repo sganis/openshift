@@ -652,9 +652,4 @@ items:
       kind: Deployment
       name: frontend
     behavior:
-      scaleDown:
-        stabilizationWindowSeconds: 60
-        policies:
-          - type: Percent
-            value: 100
-            periodSeconds: 60
+    

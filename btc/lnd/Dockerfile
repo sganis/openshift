@@ -5,5 +5,6 @@ RUN mkdir -p /data/.lnd && \
     chmod -R g+rwX /data/.lnd
 
 ENV LND_DIR=/data/.lnd
+RUN echo "alias lcli='lncli --network=regtest --lnddir=/data/.lnd'" >> /etc/bashrc
 
 ENTRYPOINT ["lnd"]

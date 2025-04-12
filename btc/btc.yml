@@ -45,6 +45,22 @@ items:
         storage: 2Gi
     storageClassName: efs-sc
     volumeMode: Filesystem
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: lnd-2-data
+    namespace: sganis-dev
+    annotations:
+      volume.beta.kubernetes.io/storage-provisioner: efs.csi.aws.com
+      volume.kubernetes.io/storage-provisioner: efs.csi.aws.com
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi
+    storageClassName: efs-sc
+    volumeMode: Filesystem
 
 # deployment
 - apiVersion: apps/v1
@@ -129,7 +145,9 @@ items:
     name: ln-1
     namespace: sganis-dev
     annotations:
-      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"lnd:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"lnd\")].image"}]'
+      app.openshift.io/connects-to: >-
+        [{"apiVersion":"apps/v1","kind":"Deployment","name":"btcd"}] 
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"lnd:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"lnd-1\")].image"}]'
     labels:
       app: btc
       component: lnd-1
@@ -193,6 +211,82 @@ items:
           - name: lnd-1-data
             persistentVolumeClaim:
               claimName: lnd-1-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        terminationGracePeriodSeconds: 30
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ln-2
+    namespace: sganis-dev
+    annotations:
+      app.openshift.io/connects-to: >-
+        [{"apiVersion":"apps/v1","kind":"Deployment","name":"btcd"}] 
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"lnd:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"lnd-2\")].image"}]'
+    labels:
+      app: btc
+      component: lnd-2
+      app.kubernetes.io/part-of: btc
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: btc
+        component: lnd-2
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+    template:
+      metadata:
+        labels:
+          app: btc
+          component: lnd-2
+      spec:
+        containers:
+          - name: lnd-2
+            image: lnd:latest
+            imagePullPolicy: Always
+            args:
+              - "--lnddir=/data/.lnd"
+              - "--bitcoin.regtest"
+              - "--bitcoin.node=bitcoind"
+              - "--bitcoind.rpchost=btcd:18443"
+              - "--bitcoind.rpcuser=bitcoin"
+              - "--bitcoind.rpcpass=$(RPC_PASSWORD)"
+              - "--bitcoind.zmqpubrawblock=tcp://btcd:28332"
+              - "--bitcoind.zmqpubrawtx=tcp://btcd:28333"
+              - "--restlisten=0.0.0.0:8080"
+              - "--rpclisten=0.0.0.0:10009"
+              - "--listen=0.0.0.0:9735"
+            env:
+              - name: RPC_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: btc
+                    key: rpcpassword
+            ports:
+              - containerPort: 9735
+              - containerPort: 10009
+              - containerPort: 8080
+            volumeMounts:
+              - mountPath: /data/.lnd
+                name: lnd-2-data
+            resources: 
+              limits:
+                cpu: "1"
+                memory: 1Gi
+              requests:
+                cpu: 200m
+                memory: 256Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+        volumes:
+          - name: lnd-2-data
+            persistentVolumeClaim:
+              claimName: lnd-2-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
@@ -270,7 +364,7 @@ items:
     namespace: sganis-dev
   spec:
     lookupPolicy:
-      local: false
+      local: true
 - apiVersion: image.openshift.io/v1
   kind: ImageStream
   metadata:
@@ -280,7 +374,7 @@ items:
     namespace: sganis-dev
   spec:
     lookupPolicy:
-      local: false
+      local: true
 
 # svc
 - apiVersion: v1
@@ -330,3 +424,28 @@ items:
         port: 8080
         targetPort: 8080
     type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: lnd-2
+    namespace: sganis-dev
+    labels:
+      app: btc
+  spec:
+    selector:
+      app: btc
+      component: lnd-2
+    ports:
+      - name: p2p
+        port: 9735
+        targetPort: 9735
+      - name: grpc
+        port: 10009
+        targetPort: 10009
+      - name: rest
+        port: 8080
+        targetPort: 8080
+    type: ClusterIP
+
+
+
