@@ -57,6 +57,7 @@ items:
             args:
               - "-datadir=/home/bitcoin/.bitcoin"
               - "-testnet=1"
+              - "-assumevalid=000000000f0ff6905c39ad4b7d26b36dd0d38d067002f4ff696b76d4c233c931"
               - "-prune=550"
               - "-server=1"
               - "-rpcbind=0.0.0.0"
