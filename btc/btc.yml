@@ -234,7 +234,7 @@ items:
   metadata:
     labels:
       app: btc
-    name: lnd-1
+    name: lnd
     namespace: sganis-dev
   spec:
     failedBuildsHistoryLimit: 3
