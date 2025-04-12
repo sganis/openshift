@@ -1,11 +1,22 @@
 apiVersion: v1
 kind: List
 items:  
+
+# secret
+- apiVersion: v1
+  kind: Secret
+  metadata:
+    name: btc
+    namespace: sganis-dev
+  type: Opaque
+  data:
+    rpcpassword: U2VjcmV0MSE=
+    
 # pvc
 - apiVersion: v1
   kind: PersistentVolumeClaim
   metadata:
-    name: btc-data
+    name: btcd-data
     namespace: sganis-dev
     annotations:
       volume.beta.kubernetes.io/storage-provisioner: efs.csi.aws.com
@@ -15,7 +26,23 @@ items:
       - ReadWriteOnce
     resources:
       requests:
-        storage: 5Gi
+        storage: 2Gi
+    storageClassName: efs-sc
+    volumeMode: Filesystem
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: lnd-1-data
+    namespace: sganis-dev
+    annotations:
+      volume.beta.kubernetes.io/storage-provisioner: efs.csi.aws.com
+      volume.kubernetes.io/storage-provisioner: efs.csi.aws.com
+  spec:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 2Gi
     storageClassName: efs-sc
     volumeMode: Filesystem
 
@@ -23,21 +50,20 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    name: btc
+    name: btcd
     namespace: sganis-dev
     annotations:
-      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"btc:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"btc\")].image"}]'
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"btcd:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"btcd\")].image"}]'
     labels:
       app: btc
+      component: btcd
       app.kubernetes.io/part-of: btc
-    # annotations:
-    #   app.openshift.io/connects-to: >-
-    #     [{"apiVersion":"apps/v1","kind":"Deployment","name":"btc"}]
   spec:
     replicas: 1
     selector:
       matchLabels:
         app: btc
+        component: btcd
     strategy:
       type: RollingUpdate
       rollingUpdate:
@@ -49,28 +75,36 @@ items:
           openshift.openshift.io/restartedAt: "2025-04-12T10:00:00.000Z"
         labels:
           app: btc
+          component: btcd
       spec:
         containers:
-          - name: btc
-            image: btc:latest
+          - name: btcd
+            image: btcd:latest
             imagePullPolicy: Always
             args:
               - "-datadir=/home/bitcoin/.bitcoin"
-              - "-testnet=1"
-              - "-assumevalid=000000000f0ff6905c39ad4b7d26b36dd0d38d067002f4ff696b76d4c233c931"
-              - "-prune=550"
+              - "-regtest=1"
+              - "-txindex=1"
               - "-server=1"
+              - "-rpcuser=bitcoin"
+              - "-rpcpassword=$(RPC_PASSWORD)"
               - "-rpcbind=0.0.0.0"
               - "-rpcallowip=0.0.0.0/0"
-              - "-rpcuser=bitcoin"
-              - "-rpcpassword=secret"
+              - "-zmqpubrawblock=tcp://0.0.0.0:28332"
+              - "-zmqpubrawtx=tcp://0.0.0.0:28333"
+            env:
+              - name: RPC_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: btc
+                    key: rpcpassword
             ports:
-              - containerPort: 18332
-                protocol: TCP
-              - containerPort: 18333
-                protocol: TCP
+              - containerPort: 18444  # P2P
+              - containerPort: 18443  # RPC
+              - containerPort: 28332  # ZMQ block
+              - containerPort: 28333  # ZMQ tx
             volumeMounts:
-              - name: btc-data
+              - name: btcd-data
                 mountPath: /home/bitcoin/.bitcoin
             resources: 
               limits:
@@ -82,9 +116,83 @@ items:
             terminationMessagePath: /dev/termination-log
             terminationMessagePolicy: File
         volumes:
-          - name: btc-data
+          - name: btcd-data
             persistentVolumeClaim:
-              claimName: btc-data
+              claimName: btcd-data
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        terminationGracePeriodSeconds: 30
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: ln-1
+    namespace: sganis-dev
+    annotations:
+      image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"lnd:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"lnd\")].image"}]'
+    labels:
+      app: btc
+      component: lnd-1
+      app.kubernetes.io/part-of: btc
+  spec:
+    replicas: 1
+    selector:
+      matchLabels:
+        app: btc
+        component: lnd-1
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+    template:
+      metadata:
+        labels:
+          app: btc
+          component: lnd-1
+      spec:
+        containers:
+          - name: lnd-1
+            image: lnd:latest
+            imagePullPolicy: Always
+            args:
+              - "--lnddir=/root/.lnd"
+              - "--bitcoin.regtest"
+              - "--bitcoin.node=bitcoind"
+              - "--bitcoind.rpchost=btcd:18443"
+              - "--bitcoind.rpcuser=bitcoin"
+              - "--bitcoind.rpcpass=$(RPC_PASSWORD)"
+              - "--bitcoind.zmqpubrawblock=tcp://btcd:28332"
+              - "--bitcoind.zmqpubrawtx=tcp://btcd:28333"
+              - "--restlisten=0.0.0.0:8080"
+              - "--rpclisten=0.0.0.0:10009"
+              - "--listen=0.0.0.0:9735"
+            env:
+              - name: RPC_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: btc
+                    key: rpcpassword
+            ports:
+              - containerPort: 9735
+              - containerPort: 10009
+              - containerPort: 8080
+            volumeMounts:
+              - mountPath: /root/.lnd
+                name: lnd-1-data
+            resources: 
+              limits:
+                cpu: "1"
+                memory: 1Gi
+              requests:
+                cpu: 200m
+                memory: 256Mi
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+        volumes:
+          - name: lnd-1-data
+            persistentVolumeClaim:
+              claimName: lnd-1-data
         dnsPolicy: ClusterFirst
         restartPolicy: Always
         schedulerName: default-scheduler
@@ -96,7 +204,7 @@ items:
   metadata:
     labels:
       app: btc
-    name: btc
+    name: btcd
     namespace: sganis-dev
   spec:
     failedBuildsHistoryLimit: 3
@@ -104,12 +212,42 @@ items:
     output:
       to:
         kind: ImageStreamTag
-        name: btc:latest
+        name: btcd:latest
     postCommit: {}
     resources: {}
     runPolicy: Serial
     source:
-      contextDir: /btc
+      contextDir: /btc/btcd
+      git:
+        ref: main
+        uri: https://github.com/sganis/openshift.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Dockerfile
+      type: Docker
+    successfulBuildsHistoryLimit: 3
+    triggers:
+    - type: ConfigChange
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: btc
+    name: lnd-1
+    namespace: sganis-dev
+  spec:
+    failedBuildsHistoryLimit: 3
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: lnd:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      contextDir: /btc/lnd
       git:
         ref: main
         uri: https://github.com/sganis/openshift.git
@@ -128,28 +266,67 @@ items:
   metadata:
     labels:
       app: btc
-    name: btc
+    name: btcd
+    namespace: sganis-dev
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: btc
+    name: lnd
     namespace: sganis-dev
   spec:
     lookupPolicy:
       local: false
 
-# svc-bitcoin.yaml
+# svc
 - apiVersion: v1
   kind: Service
   metadata:
-    name: btc
+    name: btcd
     namespace: sganis-dev
     labels:
       app: btc
   spec:
     selector:
       app: btc
+      component: btcd
     ports:
       - name: rpc
-        port: 18332
-        targetPort: 18332
+        port: 18443
+        targetPort: 18443
       - name: p2p
-        port: 18333
-        targetPort: 18333
+        port: 18444
+        targetPort: 18444
+      - name: zmqblock
+        port: 28332
+        targetPort: 28332
+      - name: zmqbtx
+        port: 28333
+        targetPort: 28333
+    type: ClusterIP
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: lnd-1
+    namespace: sganis-dev
+    labels:
+      app: btc
+  spec:
+    selector:
+      app: btc
+      component: lnd-1
+    ports:
+      - name: p2p
+        port: 9735
+        targetPort: 9735
+      - name: grpc
+        port: 10009
+        targetPort: 10009
+      - name: rest
+        port: 8080
+        targetPort: 8080
     type: ClusterIP
