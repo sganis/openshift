@@ -9,6 +9,6 @@ RUN mkdir -p /data/.lnd && \
 RUN echo '#!/bin/bash' > /app/env.sh && \
     echo 'export LND_DIR=/data/.lnd' >> /app/env.sh && \
     echo "alias lcli='lncli --network=regtest --lnddir=/data/.lnd'" >> /app/env.sh && \
-    echo 'source /app/env.sh' >> /etc/bashrc
-
+    echo "alias ll='ls -ltr --color'" >> /app/env.sh
+    
 ENTRYPOINT ["lnd"]
