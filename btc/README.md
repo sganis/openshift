@@ -1,3 +1,12 @@
+# start all pods if scaled down to zero:
+# cmd
+for /f "delims=" %d in ('oc get deploy -o name') do oc scale %d --replicas=1
+
+# bash
+for d in $(oc get deploy -o name); do oc scale $d --replicas=1; done
+
+
+
 docker run -d ^
   --name=bitcoind ^
   -v F:\btc-regtest:/home/bitcoin/.bitcoin ^
@@ -50,4 +59,3 @@ docker run -d ^
 alias lncli='lncli --network=regtest --lnddir=/data/.lnd' 
 lncli create
 lncli getinfo
-
