@@ -447,5 +447,61 @@ items:
         targetPort: 8080
     type: ClusterIP
 
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: scaler-sa
+
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    name: scale-deployments
+  rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "patch", "update"]
+
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    name: scale-deployments
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: scale-deployments
+  subjects:
+  - kind: ServiceAccount
+    name: scaler-sa
+
+- apiVersion: batch/v1
+  kind: CronJob
+  metadata:
+    name: scale-deployments
+  spec:
+    schedule: "* * * * *"  
+    concurrencyPolicy: Forbid
+    successfulJobsHistoryLimit: 1
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            containers:
+            - name: scaler
+              image: quay.io/openshift/origin-cli:latest
+              command:
+              - /bin/bash
+              - -c
+              - |
+                for d in $(oc get deploy --no-headers | awk '$2 == 0 {print $1}'); do
+                  echo "Scaling $d to 1"
+                  oc scale deployment/$d --replicas=1
+                done
+              env:
+              - name: KUBERNETES_SERVICE_HOST
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
+            restartPolicy: OnFailure
+            serviceAccountName: scaler-sa
 
 

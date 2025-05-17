@@ -652,4 +652,4 @@ items:
       kind: Deployment
       name: frontend
     behavior:
-    
+
