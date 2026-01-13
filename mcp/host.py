@@ -1,14 +1,14 @@
-# 1. available_tools = mcp_list_available_tools()
-# 2. messages = [system_prompt, user_prompt, available_tools]
-# 3. while True:
-# 4.     tool_calls, reply = llm(messages)
-# 5.     if tool_calls:
-# 6.         for tool in tool_calls:
-# 7.             result = mcp_execute_tool(tool)
-# 8.             messages.append(result)
-# 9.     else:
-# 10.        show(reply)
-# 11.        break
+# tools = client.list_tools()
+# messages = [user_prompt, system_prompt, tools]
+# while True:
+#     tool_calls, reply = llm.chat(messages)
+#     if tool_calls:
+#         for tool in tool_calls:
+#             result = client.call_tool(tool)
+#             messages.append(result)
+#     else:
+#         show(reply)
+#         break
 
 import os
 import json
@@ -35,6 +35,7 @@ async def list_models():
         print(model.id)
 
 # asyncio.run(list_models())
+# MODEL = "gpt-4o-mini"
 MODEL = "gpt-4o"
 
 SYSTEM_PROMPT =  (
@@ -44,6 +45,9 @@ SYSTEM_PROMPT =  (
     "Trust the tool catalog and never guess answers if a tool is relevant. "
     "You must call the 'plan' function first before using other tools. "
     "Never guess the answer. List tools used at the end." 
+    "Use the file file.csv in my machine to get data of cost of living indices per city."
+    "Search for the 327 cities in the file and return the one with the lowest grocery index."
+    "The grocery index is the sixth column in the file, with columns separated by commas. "
 )
 
 PLAN_TOOL = [{
@@ -68,8 +72,8 @@ PLAN_TOOL = [{
 async def main():
     # prompt = "Compute 2 and 3"
     prompt = (
-        "What are the total expenses in SAR of my car," 
-        "and the number of times I did a payment?." 
+        "which city has the lowest grocery index?"
+        "Compare with my city. Which position is my city in the list?" 
     )
     
     async with mcp_client:
@@ -142,47 +146,4 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 
-
-
-# def generate_commit_message(model, diff):
-# """Generate a concise commit message using OpenAI."""
-# while True:
-#     completion = llm_client.chat.completions.create(
-#         model=model,
-#         messages=[
-#             {"role": "system", "content": "You are a helpful assistant."},
-#             {
-#                 "role": "user",
-#                 "content": f"""
-#                 Analyze the following git diff output and generate a concise, meaningful commit message. 
-#                 Focus on the purpose of the changes rather than listing modified files. 
-#                 Keep the response in a single line without markdown formatting.
-#                 Make several messages if needed for clarity but all of them in a single line.
-#                 If I ask this question again with the same diff, add more details.
-#                 Git diff output: {diff}
-#                 """
-#             }
-#         ]
-#     )
-
-#     commit_message = completion.choices[0].message.content.strip()
-#     print(f"\n\n{commit_message}\n")
-
-#     user_input = input(
-#         "\n" + "="*40 + 
-#         "\n  Is this message good?:\n" +
-#         "="*40 + 
-#         "\n  [  Enter  ] → Accept and commit" +
-#         "\n  [    g    ] → Generate a new message" +
-#         "\n  [ Any key ] → Cancel\n" +
-#         "="*40 + "\n> "
-#     ).strip().lower()
-
-#     if user_input == "":
-#         return commit_message  # Accept the message
-#     elif user_input == "g":
-#         print("Regenerating commit message...\n")
-#     else:
-#         print("Commit canceled.")
-#         sys.exit()
 

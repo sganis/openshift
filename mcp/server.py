@@ -30,41 +30,51 @@ def read_local_file(
     path: Annotated[str, Field(description="Path to the file in the local filesystem")]
     ) -> str:
     """Read a local file and return the content."""
+    print('running read_local_file tool...')
     return open(path, "r").read()
 
-@mcp.tool()
-def my_current_car() -> str:
-    """Return my current car."""
-    return 'Yukon'
+# @mcp.tool()
+# def my_current_car() -> str:
+#     """Return my current car."""
+#     return 'Yukon'
 
-
-@mcp.tool()
-def get_expenses(car: Annotated[str, Field(description="Car model")]) -> list[object]:
-    """Return all the expenses of a car with date, detail, and expense in SAR."""
-    expenses = []
-    with open("file.csv", "r") as file:
-        reader = csv.reader(file)
-        next(reader) 
-        # Fecha,Auto,Km,SAR,Detalle,Taller
-        for row in reader:
-            if row[1] == car:
-                value = float(row[3].replace(',', '').replace('"', ''))
-                expenses.append({'date':row[0], 'detail': row[4], 'expense':value})
-    return expenses
+# @mcp.tool()
+# def my_country() -> str:
+#     """Return my country."""
+#     return 'Brazil'
 
 @mcp.tool()
-def get_total_expenses(car: Annotated[str, Field(description="Car model")]) -> float:
-    """Return total expenses of a car in SAR."""
-    expenses = 0
-    with open("file.csv", "r") as file:
-        reader = csv.reader(file)
-        next(reader) 
-        # Fecha,Auto,Km,SAR,Detalle,Taller
-        for row in reader:
-            if row[1] == car:
-                value = float(row[3].replace(',', '').replace('"', ''))
-                expenses += value
-    return expenses
+def my_city() -> str:
+    """Return my city."""
+    return 'Rio de Janeiro'
+
+# @mcp.tool()
+# def get_expenses(car: Annotated[str, Field(description="Car model")]) -> list[object]:
+#     """Return all the expenses of a car with date, detail, and expense in SAR."""
+#     expenses = []
+#     with open("file.csv", "r") as file:
+#         reader = csv.reader(file)
+#         next(reader) 
+#         # Fecha,Auto,Km,SAR,Detalle,Taller
+#         for row in reader:
+#             if row[1] == car:
+#                 value = float(row[3].replace(',', '').replace('"', ''))
+#                 expenses.append({'date':row[0], 'detail': row[4], 'expense':value})
+#     return expenses
+
+# @mcp.tool()
+# def get_total_expenses(car: Annotated[str, Field(description="Car model")]) -> float:
+#     """Return total expenses of a car in SAR."""
+#     expenses = 0
+#     with open("file.csv", "r") as file:
+#         reader = csv.reader(file)
+#         next(reader) 
+#         # Fecha,Auto,Km,SAR,Detalle,Taller
+#         for row in reader:
+#             if row[1] == car:
+#                 value = float(row[3].replace(',', '').replace('"', ''))
+#                 expenses += value
+#     return expenses
 
 # Resource returning JSON data (dict is auto-serialized)
 @mcp.resource("data://config")
